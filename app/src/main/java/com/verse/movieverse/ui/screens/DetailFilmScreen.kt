@@ -1,6 +1,8 @@
 package com.verse.movieverse.ui.screens
 
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +66,6 @@ import com.verse.movieverse.data.model.CastMember
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.ui.common.UiState
 import com.verse.movieverse.ui.components.PosterImage
-import com.verse.movieverse.ui.components.TrailerPlayer
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -352,10 +353,21 @@ private fun inisial(nama: String): String {
         .ifEmpty { "?" }
 }
 
+/**
+ * Membuka trailer di aplikasi YouTube (atau browser bila YouTube tidak terpasang).
+ * Materi Intent: ACTION_VIEW dengan Uri YouTube memicu sistem untuk memilih
+ * aplikasi yang bisa menangani URL tersebut.
+ */
+private fun bukaYouTube(context: Context, trailerId: String) {
+    val youtubeUrl = "https://www.youtube.com/watch?v=$trailerId"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(youtubeUrl))
+    context.startActivity(intent)
+}
+
 @Composable
 private fun SectionTrailer(
     film: MovieDetail,
-    context: android.content.Context
+    context: Context
 ) {
     Column {
         Text(
@@ -367,67 +379,48 @@ private fun SectionTrailer(
         Spacer(modifier = Modifier.height(12.dp))
 
         if (film.trailerId != null) {
-            // Materi State: rememberSaveable dengan key trailerId memastikan
-            // status memutar bertahan saat layar diputar, dan reset saat
-            // trailerId berganti (film berbeda).
-            var memutar by rememberSaveable(film.trailerId) { mutableStateOf(false) }
+            val thumbnailUrl = "https://img.youtube.com/vi/${film.trailerId}/hqdefault.jpg"
 
-            if (!memutar) {
-                // Tampilan thumbnail dengan overlay play icon.
-                val thumbnailUrl = "https://img.youtube.com/vi/${film.trailerId}/hqdefault.jpg"
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clickable { memutar = true },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        AsyncImage(
-                            model = thumbnailUrl,
-                            contentDescription = "Thumbnail trailer",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+            // Thumbnail trailer: diklik langsung membuka YouTube via Intent.
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .clickable { bukaYouTube(context, film.trailerId) },
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AsyncImage(
+                        model = thumbnailUrl,
+                        contentDescription = "Thumbnail trailer",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    // Overlay play icon di tengah
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = "Putar trailer",
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.White
                         )
-                        // Overlay play icon di tengah
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.3f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.PlayArrow,
-                                contentDescription = "Putar trailer",
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.White
-                            )
-                        }
                     }
                 }
-            } else {
-                // Pemutar WebView YouTube
-                TrailerPlayer(
-                    trailerId = film.trailerId,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(MaterialTheme.shapes.medium)
-                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tombol cadangan "Buka di YouTube" tetap tampil di kedua keadaan.
-            val youtubeUrl = "https://www.youtube.com/watch?v=${film.trailerId}"
+            // Tombol cadangan untuk membuka YouTube dengan Intent yang sama.
             OutlinedButton(
-                onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(youtubeUrl))
-                    context.startActivity(intent)
-                },
+                onClick = { bukaYouTube(context, film.trailerId) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Buka di YouTube")
+                Text("Tonton di YouTube")
             }
         } else {
             Card(

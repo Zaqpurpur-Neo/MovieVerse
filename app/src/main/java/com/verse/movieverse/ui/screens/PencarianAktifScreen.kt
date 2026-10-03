@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
@@ -32,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,12 +46,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.verse.movieverse.data.local.SearchHistoryEntity
 import com.verse.movieverse.data.model.MovieSummary
 import com.verse.movieverse.ui.common.UiState
 import com.verse.movieverse.ui.components.PosterImage
@@ -62,8 +66,11 @@ fun PencarianAktifScreen(
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val viewModel: PencarianAktifViewModel = viewModel()
+    val context = LocalContext.current
+    // Inisialisasi ViewModel lewat Factory sederhana
+    val viewModel: PencarianAktifViewModel = viewModel(factory = PencarianAktifViewModel.Factory(context))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val searchHistory by viewModel.searchHistory.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Materi State: rememberSaveable mempertahankan nilai saat layar diputar / konfigurasi berubah.
     var query by rememberSaveable { mutableStateOf("") }
@@ -74,7 +81,14 @@ fun PencarianAktifScreen(
         focusRequester.requestFocus()
     }
 
-    // Riwayat pencarian: dibangun di Fase 5 (Room)
+    // Fungsi lokal untuk memicu pencarian dan menyimpan ke riwayat Room
+    fun lakukanPencarian(keyword: String) {
+        if (keyword.isNotBlank()) {
+            val trimmed = keyword.trim()
+            viewModel.saveSearch(trimmed)
+            onSearch(trimmed)
+        }
+    }
 
     Column(
         modifier = modifier
@@ -85,16 +99,36 @@ fun PencarianAktifScreen(
             query = query,
             onQueryChange = { query = it },
             onClear = { query = "" },
-            onSearch = {
-                if (query.isNotBlank()) onSearch(query.trim())
-            },
+            onSearch = { lakukanPencarian(query) },
             onNavigateUp = onNavigateUp,
             focusRequester = focusRequester
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        SectionGenrePopuler(onSearch = onSearch)
+        // Section Pencarian Terakhir
+        if (searchHistory.isNotEmpty()) {
+            SectionRiwayatPencarian(
+                history = searchHistory,
+                onItemClick = { keyword ->
+                    query = keyword
+                    lakukanPencarian(keyword)
+                },
+                onDeleteItem = { keyword -> viewModel.deleteSearch(keyword) },
+                onClearAll = { viewModel.clearSearchHistory() }
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+        } else {
+            Text(
+                text = "Belum ada pencarian",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        SectionGenrePopuler(onSearch = { genre -> lakukanPencarian(genre) })
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -105,6 +139,64 @@ fun PencarianAktifScreen(
         )
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun SectionRiwayatPencarian(
+    history: List<SearchHistoryEntity>,
+    onItemClick: (String) -> Unit,
+    onDeleteItem: (String) -> Unit,
+    onClearAll: () -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Pencarian Terakhir",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            TextButton(onClick = onClearAll) {
+                Text("Hapus Semua")
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        history.forEach { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onItemClick(item.keyword) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = item.keyword,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { onDeleteItem(item.keyword) }) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Hapus",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -329,4 +421,4 @@ private fun BarisFilmPopuler(
             }
         }
     }
-}
+}   

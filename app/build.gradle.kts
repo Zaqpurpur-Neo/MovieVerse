@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+
+    id("com.google.devtools.ksp") version "2.3.9"
 }
 
 android {
@@ -58,6 +60,12 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.coil.compose)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+
+    // Annotation processor milik Room menggunakan KSP
+    ksp(libs.androidx.room.compiler)
 
     // Test
     testImplementation(libs.junit)
