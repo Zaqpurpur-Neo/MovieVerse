@@ -1,8 +1,6 @@
 package com.verse.movieverse.ui.screens
 
-import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,11 +24,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -40,12 +40,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,6 +70,7 @@ import com.verse.movieverse.data.model.CastMember
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.ui.common.UiState
 import com.verse.movieverse.ui.components.PosterImage
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -74,255 +79,311 @@ fun DetailFilmScreen(
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val viewModel: DetailFilmViewModel = viewModel()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    // ViewModel dibuat lewat Factory sederhana (materi: injeksi dependensi tanpa DI framework)
+    val viewModel: DetailFilmViewModel = viewModel(factory = DetailFilmViewModel.Factory(context))
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // LaunchedEffect dipicu setiap movieId berubah (state hoisting dari navigasi).
+    // State hoisting: status tombol dibaca dari ViewModel, tombol hanya menerima nilai + lambda
+    val isSaved by viewModel.isSaved.collectAsStateWithLifecycle()
+    val isWatched by viewModel.isWatched.collectAsStateWithLifecycle()
+
+    // Snackbar untuk feedback aksi Simpan
+    val snackbarHostState = remember { SnackbarHostState() }
+    // Coroutine scope untuk menjalankan snackbar dari listener klik
+    val scope = rememberCoroutineScope()
+
+    // LaunchedEffect dipicu setiap movieId berubah (state hoisting dari navigasi)
     LaunchedEffect(movieId) {
         viewModel.muat(movieId)
     }
 
-    when (val state = uiState) {
-        is UiState.Loading -> {
-            Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-
-        is UiState.Error -> {
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                IconButton(onClick = onNavigateUp) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Kembali",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { viewModel.retry() }) {
-                    Text("Coba Lagi")
-                }
-            }
-        }
-
-        is UiState.Success -> {
-            val film = state.data
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // a. Hero Poster + Gradien + Top Bar
+    // Scaffold di sini HANYA rumah untuk Snackbar.
+    // paddingValues sengaja TIDAK dipakai: Scaffold luar (AppNavigation) sudah
+    // memberi padding status bar & bottom bar. Memakainya lagi akan menambah
+    // tinggi status bar dua kali -> muncul gap kosong di atas poster.
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { _ ->
+        when (val state = uiState) {
+            is UiState.Loading -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(280.dp)
+                    modifier = modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    PosterImage(
-                        url = film.posterUrl,
-                        modifier = Modifier.fillMaxSize()
+                    CircularProgressIndicator()
+                }
+            }
+
+            is UiState.Error -> {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge
                     )
-                    // Gradien gelap vertikal di bawah agar teks terbaca
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { viewModel.retry() }) {
+                        Text("Coba Lagi")
+                    }
+                }
+            }
+
+            is UiState.Success -> {
+                val film = state.data
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // a. Hero Poster + Gradien + Top Bar
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f)
+                            .fillMaxWidth()
+                            .height(280.dp)
+                    ) {
+                        PosterImage(
+                            url = film.posterUrl,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        // Gradien gelap vertikal di bawah agar teks terbaca
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f)
+                                        )
                                     )
                                 )
-                            )
-                    )
-
-                    // Top bar overlay
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // State hoisting: aksi kembali dilempar ke parent.
-                        IconButton(onClick = onNavigateUp) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Kembali",
-                                tint = Color.White
-                            )
-                        }
-                        Text(
-                            text = "Detail Film",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
                         )
-                        IconButton(onClick = {
-                            val shareText = "Tonton ${film.title} (${film.year}) - rating ${film.rating}/10"
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, shareText)
-                            }
-                            context.startActivity(Intent.createChooser(intent, "Bagikan via"))
-                        }) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = "Bagikan",
-                                tint = Color.White
-                            )
-                        }
-                    }
-                }
 
-                // Konten detail di bawah hero
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // b. Judul + Rating
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = film.title,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                            ),
-                            shape = MaterialTheme.shapes.small
+                        // Top bar overlay
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            // State hoisting: aksi kembali dilempar ke parent
+                            IconButton(onClick = onNavigateUp) {
                                 Icon(
-                                    Icons.Default.Star,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Kembali",
+                                    tint = Color.White
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "${film.rating} / 10",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                            }
+                            Text(
+                                text = "Detail Film",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                            IconButton(onClick = {
+                                val shareText = "Tonton ${film.title} (${film.year}) - rating ${film.rating}/10"
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                }
+                                context.startActivity(Intent.createChooser(intent, "Bagikan via"))
+                            }) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = "Bagikan",
+                                    tint = Color.White
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Metadata: tahun • durasi
-                    val durasi = formatDurasi(film.runtime)
-                    Text(
-                        text = if (durasi.isNotEmpty()) "${film.year} • $durasi" else "${film.year}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Genre chips (non-klik)
-                    if (film.genres.isNotEmpty()) {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                    // Konten detail di bawah hero
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        // b. Judul + Rating
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            film.genres.forEach { genre ->
-                                AssistChip(
-                                    onClick = { /* non-klik */ },
-                                    label = { Text(genre) }
-                                )
+                            Text(
+                                text = film.title,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                ),
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "${film.rating} / 10",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    // c. Tombol aksi
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { /* diaktifkan di Fase 6 */ },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                Icons.Default.BookmarkBorder,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Simpan")
+                        // Metadata: tahun • durasi
+                        val durasi = formatDurasi(film.runtime)
+                        Text(
+                            text = if (durasi.isNotEmpty()) "${film.year} • $durasi" else "${film.year}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Genre chips (non-klik)
+                        if (film.genres.isNotEmpty()) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                film.genres.forEach { genre ->
+                                    AssistChip(
+                                        onClick = { /* non-klik */ },
+                                        label = { Text(genre) }
+                                    )
+                                }
+                            }
                         }
-                        OutlinedButton(
-                            onClick = { /* diaktifkan di Fase 6 */ },
-                            modifier = Modifier.weight(1f)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // c. Tombol aksi (stateless: menerima status + lambda)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                            TombolSimpan(
+                                isSaved = isSaved,
+                                onClick = {
+                                    // Pesan diambil dari status SEBELUM toggle
+                                    val pesan = if (isSaved) {
+                                        "Dihapus dari watchlist"
+                                    } else {
+                                        "Ditambahkan ke watchlist"
+                                    }
+                                    viewModel.onToggleSave()
+                                    // Snackbar dijalankan lewat coroutine, BUKAN LaunchedEffect
+                                    scope.launch { snackbarHostState.showSnackbar(pesan) }
+                                },
+                                modifier = Modifier.weight(1f)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Sudah Ditonton")
+                            TombolSudahDitonton(
+                                isWatched = isWatched,
+                                onClick = { viewModel.onToggleWatched() },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { /* diaktifkan di Fase 6B */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Tulis Ulasan Saya")
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // d. Section Trailer
+                        SectionTrailer(film = film, context = context)
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // e. Section Sinopsis
+                        SectionSinopsis(film = film)
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // f. Section Pemeran
+                        if (film.cast.isNotEmpty()) {
+                            SectionPemeran(cast = film.cast)
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = { /* diaktifkan di Fase 6 */ },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Tulis Ulasan Saya")
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // d. Section Trailer
-                    SectionTrailer(film = film, context = context)
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // e. Section Sinopsis
-                    SectionSinopsis(film = film)
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // f. Section Pemeran
-                    if (film.cast.isNotEmpty()) {
-                        SectionPemeran(cast = film.cast)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
+    }
+}
+
+// Tombol Simpan: stateless, ikon bookmark terisi bila tersimpan (state hoisting)
+@Composable
+private fun TombolSimpan(
+    isSaved: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Icon(
+            if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text("Simpan")
+    }
+}
+
+// Tombol Sudah Ditonton: stateless, ikon centang terisi bila sudah (state hoisting)
+@Composable
+private fun TombolSudahDitonton(
+    isWatched: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Icon(
+            if (isWatched) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text("Sudah Ditonton")
     }
 }
 
@@ -353,21 +414,10 @@ private fun inisial(nama: String): String {
         .ifEmpty { "?" }
 }
 
-/**
- * Membuka trailer di aplikasi YouTube (atau browser bila YouTube tidak terpasang).
- * Materi Intent: ACTION_VIEW dengan Uri YouTube memicu sistem untuk memilih
- * aplikasi yang bisa menangani URL tersebut.
- */
-private fun bukaYouTube(context: Context, trailerId: String) {
-    val youtubeUrl = "https://www.youtube.com/watch?v=$trailerId"
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(youtubeUrl))
-    context.startActivity(intent)
-}
-
 @Composable
 private fun SectionTrailer(
     film: MovieDetail,
-    context: Context
+    context: android.content.Context
 ) {
     Column {
         Text(
@@ -380,13 +430,16 @@ private fun SectionTrailer(
 
         if (film.trailerId != null) {
             val thumbnailUrl = "https://img.youtube.com/vi/${film.trailerId}/hqdefault.jpg"
+            val youtubeUrl = "https://www.youtube.com/watch?v=${film.trailerId}"
 
-            // Thumbnail trailer: diklik langsung membuka YouTube via Intent.
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .clickable { bukaYouTube(context, film.trailerId) },
+                    .clickable {
+                        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(youtubeUrl))
+                        context.startActivity(intent)
+                    },
                 shape = MaterialTheme.shapes.medium
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -415,9 +468,11 @@ private fun SectionTrailer(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tombol cadangan untuk membuka YouTube dengan Intent yang sama.
             OutlinedButton(
-                onClick = { bukaYouTube(context, film.trailerId) },
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(youtubeUrl))
+                    context.startActivity(intent)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Tonton di YouTube")
@@ -451,7 +506,7 @@ private fun SectionSinopsis(film: MovieDetail) {
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Materi State: rememberSaveable mempertahankan nilai saat layar diputar.
+        // Materi State: rememberSaveable mempertahankan nilai saat layar diputar
         var terbuka by rememberSaveable { mutableStateOf(false) }
 
         Text(
@@ -537,7 +592,7 @@ private fun SectionPemeran(cast: List<CastMember>) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Parameter 'key' WAJIB di Lazy Layout (materi Lazy).
+            // Parameter 'key' WAJIB di Lazy Layout (materi Lazy)
             items(cast, key = { it.name }) { member ->
                 Column(
                     modifier = Modifier.width(80.dp),

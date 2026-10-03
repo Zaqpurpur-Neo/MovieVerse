@@ -21,7 +21,7 @@ interface PersonalDao {
     @Query("DELETE FROM search_history")
     suspend fun clearSearchHistory()
 
-    // === Reviews (Fase 6) ===
+    // === Reviews (Fase 6B) ===
     @Query("SELECT * FROM reviews")
     fun getAllReviews(): Flow<List<ReviewEntity>>
 
@@ -34,7 +34,7 @@ interface PersonalDao {
     @Query("SELECT EXISTS(SELECT 1 FROM reviews WHERE movieId = :movieId)")
     suspend fun hasReview(movieId: Int): Boolean
 
-    // === Watchlist (Fase 6) ===
+    // === Watchlist (Fase 6A) ===
     @Query("SELECT * FROM watchlist")
     fun getAllWatchlist(): Flow<List<WatchlistEntity>>
 
@@ -47,7 +47,11 @@ interface PersonalDao {
     @Query("SELECT EXISTS(SELECT 1 FROM watchlist WHERE movieId = :movieId)")
     suspend fun isInWatchlist(movieId: Int): Boolean
 
-    // === Watched (Fase 6) ===
+    // Observasi status watchlist secara reaktif (Flow)
+    @Query("SELECT EXISTS(SELECT 1 FROM watchlist WHERE movieId = :movieId)")
+    fun isInWatchlistFlow(movieId: Int): Flow<Boolean>
+
+    // === Watched (Fase 6A) ===
     @Query("SELECT * FROM watched")
     fun getAllWatched(): Flow<List<WatchedEntity>>
 
@@ -59,4 +63,8 @@ interface PersonalDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM watched WHERE movieId = :movieId)")
     suspend fun isWatched(movieId: Int): Boolean
+
+    // Observasi status watched secara reaktif (Flow)
+    @Query("SELECT EXISTS(SELECT 1 FROM watched WHERE movieId = :movieId)")
+    fun isWatchedFlow(movieId: Int): Flow<Boolean>
 }
