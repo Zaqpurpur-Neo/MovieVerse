@@ -66,11 +66,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.verse.movieverse.data.local.ReviewEntity
 import com.verse.movieverse.data.model.CastMember
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.ui.common.UiState
+import com.verse.movieverse.ui.components.BarisBintang
 import com.verse.movieverse.ui.components.PosterImage
+import com.verse.movieverse.ui.components.ReviewSheet
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -87,6 +93,8 @@ fun DetailFilmScreen(
     // State hoisting: status tombol dibaca dari ViewModel, tombol hanya menerima nilai + lambda
     val isSaved by viewModel.isSaved.collectAsStateWithLifecycle()
     val isWatched by viewModel.isWatched.collectAsStateWithLifecycle()
+    val myReview by viewModel.myReview.collectAsStateWithLifecycle()
+    val showSheet by viewModel.showSheet.collectAsStateWithLifecycle()
 
     // Snackbar untuk feedback aksi Simpan
     val snackbarHostState = remember { SnackbarHostState() }
@@ -314,10 +322,10 @@ fun DetailFilmScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Button(
-                            onClick = { /* diaktifkan di Fase 6B */ },
+                            onClick = { viewModel.onOpenSheet() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Tulis Ulasan Saya")
+                            Text(if (myReview != null) "Edit Ulasan Saya" else "Tulis Ulasan Saya")
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -335,12 +343,41 @@ fun DetailFilmScreen(
                         // f. Section Pemeran
                         if (film.cast.isNotEmpty()) {
                             SectionPemeran(cast = film.cast)
+                            Spacer(modifier = Modifier.height(24.dp))
                         }
+
+                        // g. Section Ulasan Saya
+                        SectionUlasanSaya(
+                            review = myReview,
+                            onEdit = { viewModel.onOpenSheet() }
+                        )
 
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
+        }
+
+        // Bottom sheet ulasan pribadi: mode tulis atau edit tergantung ada/tidaknya ulasan
+        val stateTerkini = uiState
+        if (showSheet && stateTerkini is UiState.Success) {
+            val filmSheet = stateTerkini.data
+            val review = myReview
+            ReviewSheet(
+                modeEdit = review != null,
+                judul = filmSheet.title,
+                tahun = filmSheet.year,
+                posterUrl = filmSheet.posterUrl,
+                ratingAwal = review?.rating ?: 0f,
+                catatanAwal = review?.note ?: "",
+                tanggalAwal = review?.watchedDate ?: tanggalHariIni(),
+                isRewatchAwal = review?.isRewatch ?: false,
+                onSimpan = { rating, tanggal, isRewatch, catatan ->
+                    viewModel.onSaveReview(rating, tanggal, isRewatch, catatan)
+                },
+                onHapus = { viewModel.onDeleteReview() },
+                onTutup = { viewModel.onCloseSheet() }
+            )
         }
     }
 }
@@ -412,6 +449,70 @@ private fun inisial(nama: String): String {
         .mapNotNull { it.firstOrNull()?.uppercaseChar() }
         .joinToString("")
         .ifEmpty { "?" }
+}
+
+/**
+ * Teks tanggal hari ini format Indonesia, mis. "12 Mei 2024".
+ */
+private fun tanggalHariIni(): String {
+    val format = SimpleDateFormat("d MMMM yyyy", Locale("id", "ID"))
+    return format.format(Date())
+}
+
+@Composable
+private fun SectionUlasanSaya(
+    review: ReviewEntity?,
+    onEdit: () -> Unit
+) {
+    Column {
+        Text(
+            text = "Ulasan Saya",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (review != null) {
+                    BarisBintang(rating = review.rating)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (review.note.isNotEmpty()) {
+                        Text(
+                            text = review.note,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    Text(
+                        text = if (review.isRewatch) {
+                            "Ditonton: ${review.watchedDate} • Tonton ulang"
+                        } else {
+                            "Ditonton: ${review.watchedDate}"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(onClick = onEdit) {
+                        Text("Edit")
+                    }
+                } else {
+                    Text(
+                        text = "Belum ada ulasan",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

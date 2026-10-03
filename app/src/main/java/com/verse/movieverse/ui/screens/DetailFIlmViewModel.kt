@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.verse.movieverse.data.local.AppDatabase
+import com.verse.movieverse.data.local.ReviewEntity
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.data.repository.MovieRepository
 import com.verse.movieverse.data.repository.PersonalRepository
@@ -34,6 +35,14 @@ class DetailFilmViewModel(
     private val _isWatched = MutableStateFlow(false)
     val isWatched: StateFlow<Boolean> = _isWatched.asStateFlow()
 
+    // Ulasan pribadi film ini (null bila belum ada)
+    private val _myReview = MutableStateFlow<ReviewEntity?>(null)
+    val myReview: StateFlow<ReviewEntity?> = _myReview.asStateFlow()
+
+    // Apakah bottom sheet ulasan sedang tampil
+    private val _showSheet = MutableStateFlow(false)
+    val showSheet: StateFlow<Boolean> = _showSheet.asStateFlow()
+
     // Guard agar tidak memuat ulang saat argumen sama (misal layar diputar)
     private var idTerakhir: Int? = null
 
@@ -46,7 +55,7 @@ class DetailFilmViewModel(
             try {
                 val detail = movieRepository.getMovieDetail(id)
                 _uiState.update { UiState.Success(detail) }
-                // Mulai amati status watchlist dan watched untuk film ini
+                // Mulai amati status watchlist, watched, dan ulasan
                 collectStatus(id)
             } catch (e: Exception) {
                 _uiState.update { UiState.Error("Gagal memuat detail film. Periksa koneksi internet Anda.") }
@@ -54,7 +63,7 @@ class DetailFilmViewModel(
         }
     }
 
-    // Kumpulkan Flow dari repository agar tombol selalu sinkron dengan Room
+    // Kumpulkan Flow dari repository agar UI selalu sinkron dengan Room
     private fun collectStatus(movieId: Int) {
         viewModelScope.launch {
             personalRepository.observeIsInWatchlist(movieId).collect { saved ->
@@ -64,6 +73,11 @@ class DetailFilmViewModel(
         viewModelScope.launch {
             personalRepository.observeIsWatched(movieId).collect { watched ->
                 _isWatched.value = watched
+            }
+        }
+        viewModelScope.launch {
+            personalRepository.observeReview(movieId).collect { review ->
+                _myReview.value = review
             }
         }
     }
@@ -101,6 +115,50 @@ class DetailFilmViewModel(
                     posterUrl = film.posterUrl,
                     year = film.year
                 )
+            }
+        }
+    }
+
+    // === Bottom sheet ulasan (Fase 6B) ===
+    fun onOpenSheet() {
+        _showSheet.value = true
+    }
+
+    fun onCloseSheet() {
+        _showSheet.value = false
+    }
+
+    fun onSaveReview(
+        rating: Float,
+        tanggal: String,
+        isRewatch: Boolean,
+        catatan: String
+    ) {
+        val state = _uiState.value
+        if (state is UiState.Success) {
+            val film = state.data
+            viewModelScope.launch {
+                personalRepository.simpanReview(
+                    movieId = film.id,
+                    title = film.title,
+                    posterUrl = film.posterUrl,
+                    year = film.year,
+                    rating = rating,
+                    note = catatan,
+                    watchedDate = tanggal,
+                    isRewatch = isRewatch
+                )
+                _showSheet.value = false
+            }
+        }
+    }
+
+    fun onDeleteReview() {
+        val state = _uiState.value
+        if (state is UiState.Success) {
+            viewModelScope.launch {
+                personalRepository.hapusReview(state.data.id)
+                _showSheet.value = false
             }
         }
     }
