@@ -1,194 +1,150 @@
-# Design Tokens — Cinema Dynamic Tone (Material 3 Movie Catalog)
+# Design Tokens — Cinema Dynamic Tone
 
-Dokumen ini mendefinisikan sistem token desain (**Design Tokens**) untuk aplikasi **MovieVerse** berdasarkan Design System resmi **"Cinema Dynamic Tone"** dari project Stitch *Material 3 Movie Catalog* serta implementasi kode HTML dari 7 layar utama.
+Dokumen ini mendokumentasikan spesifikasi token desain untuk **MovieVerse**, yang diadaptasi dari design system **Cinema Dynamic Tone** (Material Design 3 Dark Theme) dan implementasi HTML dari 9 layar Stitch.
 
-> [!NOTE]
-> Token yang bersumber langsung dari Design System resmi **Cinema Dynamic Tone** ditandai sebagai `[RESMI / STITCH]`.
-> Bagian yang tidak tercantum di spesifikasi resmi namun ditemukan pada kode HTML atau merupakan inferensi/asumsi implementasi ditandai dengan label **`[INFERENSI / TEBAKAN]`**.
-
----
-
-## 1. Palet Warna (Color Palette)
-
-Tema utama mengadopsi **Material Design 3 (M3) Dark Mode** dengan aksen *Lavender/Violet* (*Primary*) dan *Soft Rose* (*Tertiary*) berlatar kanvas gelap sinematik.
-
-### 1.1. Warna Utama & Kontainer (Primary, Secondary, Tertiary)
-
-| Token Role | Hex Code | Deskripsi & Penggunaan | Sumber |
-|---|---|---|:---:|
-| `primary` | `#E9DDFF` | Warna aksen utama, tombol utama, indikator aktif navigasi, teks sorotan | `[RESMI / STITCH]` |
-| `on-primary` | `#37265E` | Teks/ikon di atas elemen `primary` | `[RESMI / STITCH]` |
-| `primary-container` | `#D0BCFF` | Kontainer tombol utama, chip aktif terpilih, pill badge aktif | `[RESMI / STITCH]` |
-| `on-primary-container` | `#594983` | Teks/ikon di atas `primary-container` | `[RESMI / STITCH]` |
-| `inverse-primary` | `#665590` | Versi kontras inverse dari warna primary | `[RESMI / STITCH]` |
-| `primary-fixed` | `#E9DDFF` | Warna primary tetap tanpa modulasi tema | `[RESMI / STITCH]` |
-| `primary-fixed-dim` | `#D0BCFF` | Varian redup dari primary fixed | `[RESMI / STITCH]` |
-| `on-primary-fixed` | `#210F48` | Teks di atas primary fixed | `[RESMI / STITCH]` |
-| `on-primary-fixed-variant` | `#4D3D76` | Teks sekunder di atas primary fixed | `[RESMI / STITCH]` |
-| `secondary` | `#CCC2DC` | Aksen sekunder (slate-violet), chip filter inaktif, subtitle | `[RESMI / STITCH]` |
-| `on-secondary` | `#332D41` | Teks/ikon di atas warna `secondary` | `[RESMI / STITCH]` |
-| `secondary-container` | `#4A4359` | Kontainer sekunder, elevated button background | `[RESMI / STITCH]` |
-| `on-secondary-container` | `#BAB1CA` | Teks/ikon di atas `secondary-container` | `[RESMI / STITCH]` |
-| `secondary-fixed` | `#E9DEF9` | Varian fixed sekunder | `[RESMI / STITCH]` |
-| `secondary-fixed-dim` | `#CCC2DC` | Varian fixed redup sekunder | `[RESMI / STITCH]` |
-| `on-secondary-fixed` | `#1E182B` | Teks di atas secondary fixed | `[RESMI / STITCH]` |
-| `on-secondary-fixed-variant` | `#4A4359` | Teks pendukung di atas secondary fixed | `[RESMI / STITCH]` |
-| `tertiary` | `#FFD9E3` | Aksen crimson/rose untuk rating film, bookmark, status favorit | `[RESMI / STITCH]` |
-| `on-tertiary` | `#492532` | Teks/ikon di atas elemen `tertiary` | `[RESMI / STITCH]` |
-| `tertiary-container` | `#EFB8C8` | Lencana rating bintang, tag promosi khusus | `[RESMI / STITCH]` |
-| `on-tertiary-container` | `#704654` | Teks rating di atas `tertiary-container` | `[RESMI / STITCH]` |
-| `tertiary-fixed` | `#FFD9E3` | Warna tertiary tetap | `[RESMI / STITCH]` |
-| `tertiary-fixed-dim` | `#EFB8C8` | Varian fixed redup tertiary | `[RESMI / STITCH]` |
-| `on-tertiary-fixed` | `#31111D` | Teks di atas tertiary fixed | `[RESMI / STITCH]` |
-| `on-tertiary-fixed-variant` | `#633B48` | Teks pendukung di atas tertiary fixed | `[RESMI / STITCH]` |
-
-### 1.2. Surface & Background (Tonal Elevation)
-
-| Token Role | Hex Code | Deskripsi & Penggunaan | Sumber |
-|---|---|---|:---:|
-| `background` | `#141218` | Latar belakang kanvas aplikasi | `[RESMI / STITCH]` |
-| `on-background` | `#E7E0E9` | Teks utama pada background kanvas | `[RESMI / STITCH]` |
-| `surface` | `#141218` | Permukaan dasar komponen / Level 0 | `[RESMI / STITCH]` |
-| `surface-dim` | `#141218` | Permukaan redup | `[RESMI / STITCH]` |
-| `surface-bright` | `#3B383F` | Permukaan kontras terang pada dark mode | `[RESMI / STITCH]` |
-| `surface-container-lowest` | `#0F0D13` | Tingkat elevasi terendah (inset cards/well) | `[RESMI / STITCH]` |
-| `surface-container-low` | `#1D1B21` | Kartu daftar film, item list standard | `[RESMI / STITCH]` |
-| `surface-container` | `#211F25` | Kartu konten, review box standard | `[RESMI / STITCH]` |
-| `surface-container-high` | `#2B292F` | Kolom pencarian (Search Bar), bottom sheet | `[RESMI / STITCH]` |
-| `surface-container-highest` | `#36343A` | Modal dialog, floating navigation rail/bar | `[RESMI / STITCH]` |
-| `on-surface` | `#E7E0E9` | Teks dan ikon utama (High Contrast) | `[RESMI / STITCH]` |
-| `on-surface-variant` | `#CAC4D0` | Teks sekunder, label placeholder, ikon pembantu | `[RESMI / STITCH]` |
-| `surface-variant` | `#36343A` | Pemisah dan outline non-aktif | `[RESMI / STITCH]` |
-| `surface-tint` | `#D0BCFF` | Warna tint elevasi M3 | `[RESMI / STITCH]` |
-| `inverse-surface` | `#E7E0E9` | Permukaan kontras terbalik (misal: Snackbar) | `[RESMI / STITCH]` |
-| `inverse-on-surface` | `#322F36` | Teks di atas inverse surface | `[RESMI / STITCH]` |
-
-### 1.3. Outline & Status Feedback (Error, Stroke)
-
-| Token Role | Hex Code | Deskripsi & Penggunaan | Sumber |
-|---|---|---|:---:|
-| `outline` | `#948F9A` | Garis tepi aktif, batas input field | `[RESMI / STITCH]` |
-| `outline-variant` | `#49454F` | Garis pembatas halus (divider), outline inaktif | `[RESMI / STITCH]` |
-| `error` | `#FFB4AB` | Indikator kesalahan, tombol hapus/batal | `[RESMI / STITCH]` |
-| `on-error` | `#690005` | Teks di atas warna error | `[RESMI / STITCH]` |
-| `error-container` | `#93000A` | Wadah pesan kesalahan / peringatan | `[RESMI / STITCH]` |
-| `on-error-container` | `#FFDAD6` | Teks di atas wadah pesan error | `[RESMI / STITCH]` |
-
-### 1.4. Varian Warna pada Export HTML *(Perbedaan Temuan)*
-
-> [!WARNING]
-> Pada konfigurasi Tailwind CSS di dalam berkas HTML hasil ekspor Stitch, ditemukan beberapa pergeseran nilai hex mikro (kemungkinan variasi palette generator otomatis):
-> - `[INFERENSI / TEBAKAN]` HTML Primary: `#ECD7FF` (Resmi: `#E9DDFF`)
-> - `[INFERENSI / TEBAKAN]` HTML Surface: `#131315` (Resmi: `#141218`)
-> - `[INFERENSI / TEBAKAN]` HTML Surface Container High: `#2A2A2C` (Resmi: `#2B292F`)
-> - `[INFERENSI / TEBAKAN]` HTML Secondary: `#DDB8FF` (Resmi: `#CCC2DC`)
-> 
-> **Rekomendasi untuk Android**: Gunakan nilai resmi dari Design System (`Cinema Dynamic Tone`) pada subbab 1.1 - 1.3.
+> **Catatan Sumber & Label:**
+> - Bagian bertanda **`[Sumber: Design System Stitch]`** berasal langsung dari metadata *Cinema Dynamic Tone* (`designMd` & `designTheme`).
+> - Bagian bertanda **`[Sumber: HTML Layar]`** berasal dari analisis kode HTML 9 layar yang diekspor.
+> - Bagian bertanda **`[Asumsi / Ekstrapolasi]`** adalah nilai pelengkap standar Material 3 yang tidak didefinisikan secara eksplisit di sumber Stitch.
+> - **Tidak ada kode Kotlin** dalam dokumen ini.
 
 ---
 
-## 2. Tipografi (Typography — Roboto Flex)
+## 1. Palet Warna (Color Palette & Roles M3)
 
-Keluarga font resmi adalah **Roboto Flex**. Skala tipografi dirancang mengikuti hierarki **Material Design 3 Type Scale**.
+Palet mengadopsi tema **Material Design 3 Dark Mode (Cinema Dark)** dengan warna aksen lavender/violet sebagai identitas visual utama, neutral dark surface untuk kedalaman sinematik, serta rose/tertiary untuk rating dan kurasi film.
 
-### 2.1. Skala Tipografi Resmi
+### 1.1 Primary & Secondary
+| Peran M3 | Nilai Hex | Sumber | Penggunaan & Deskripsi |
+|---|---|---|---|
+| `primary` | `#E9DDFF` / `#D0BCFF` | `[Sumber: Design System Stitch]` | Aksen tombol utama, active pill indicator, highlight teks penting |
+| `onPrimary` | `#37265E` (alt: `#381E72` / `#29074A`) | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Teks / ikon di atas elemen berlatar `primary` |
+| `primaryContainer` | `#D0BCFF` (alt: `#594983`) | `[Sumber: Design System Stitch]` | Kontainer aktif sekunder, badge terpilih |
+| `onPrimaryContainer` | `#594983` (alt: `#E9DDFF`) | `[Sumber: Design System Stitch]` | Teks / ikon di atas `primaryContainer` |
+| `inversePrimary` | `#665590` | `[Sumber: Design System Stitch]` | Aksen primary pada background terang |
+| `secondary` | `#CCC2DC` | `[Sumber: Design System Stitch]` | Filter sekunder, chip pasif, metadata chip |
+| `onSecondary` | `#332d41` | `[Sumber: Design System Stitch]` | Teks / ikon di atas elemen berlatar `secondary` |
+| `secondaryContainer` | `#4A4359` (alt: `#62259B`) | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Indikator tab aktif navigasi bawah, container chip |
+| `onSecondaryContainer`| `#BAB1CA` (alt: `#D1A1FF`) | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Teks / ikon di atas `secondaryContainer` |
 
-| Role Tipografi | Ukuran (Size) | Bobot (Weight) | Line Height | Letter Spacing | Sumber |
-|---|---|---|---|---|:---:|
-| `display-lg` | `57px` (`57sp`) | 400 (Regular) | `64px` | `-0.25px` | `[RESMI / STITCH]` |
-| `display-lg-mobile` | `36px` (`36sp`) | 400 (Regular) | `44px` | `0px` | `[RESMI / STITCH]` |
-| `headline-md` | `28px` (`28sp`) | 400 (Regular) | `36px` | `0px` | `[RESMI / STITCH]` |
-| `title-lg` | `22px` (`22sp`) | 500 (Medium) | `28px` | `0px` | `[RESMI / STITCH]` |
-| `title-md` | `16px` (`16sp`) | 500 (Medium) | `24px` | `0.15px` | `[RESMI / STITCH]` |
-| `body-lg` | `16px` (`16sp`) | 400 (Regular) | `24px` | `0.5px` | `[RESMI / STITCH]` |
-| `body-md` | `14px` (`14sp`) | 400 (Regular) | `20px` | `0.25px` | `[RESMI / STITCH]` |
-| `label-lg` | `14px` (`14sp`) | 500 (Medium) | `20px` | `0.1px` | `[RESMI / STITCH]` |
-| `label-md` | `12px` (`12sp`) | 500 (Medium) | `16px` | `0.5px` | `[RESMI / STITCH]` |
-| `label-sm` | `11px` (`11sp`) | 500 (Medium) | `16px` | `0.5px` | `[RESMI / STITCH]` |
+### 1.2 Tertiary & Accent (Ratings & Curations)
+| Peran M3 | Nilai Hex | Sumber | Penggunaan & Deskripsi |
+|---|---|---|---|
+| `tertiary` | `#FFD9E3` / `#EFB8C8` | `[Sumber: Design System Stitch]` | Badge rating bintang, bookmark, ulasan pilihan |
+| `onTertiary` | `#492532` | `[Sumber: Design System Stitch]` | Teks / ikon di atas elemen berlatar `tertiary` |
+| `tertiaryContainer` | `#EFB8C8` (alt: `#704654`) | `[Sumber: Design System Stitch]` | Latar belakang badge rating tinggi atau ulasan spesial |
+| `onTertiaryContainer` | `#704654` (alt: `#FFD9E3`) | `[Sumber: Design System Stitch]` | Teks / ikon di atas `tertiaryContainer` |
 
-### 2.2. Tipografi Tambahan & Penyesuaian Bobot yang Digunakan di HTML
+### 1.3 Surface, Container & Background
+| Peran M3 | Nilai Hex | Sumber | Tingkat Elevasi / Karakteristik |
+|---|---|---|---|
+| `background` | `#141218` | `[Sumber: Design System Stitch]` | Canvas utama dasar aplikasi |
+| `onBackground` | `#E7E0E9` | `[Sumber: Design System Stitch]` | Teks & ikon utama di atas background |
+| `surface` | `#141218` (alt: `#131315`) | `[Sumber: Design System Stitch]` | Latar belakang dasar screen dan app bar |
+| `surfaceDim` | `#141218` | `[Sumber: Design System Stitch]` | Latar belakang redup |
+| `surfaceBright` | `#3B383F` | `[Sumber: Design System Stitch]` | Permukaan yang lebih terang untuk highlight baris |
+| `surfaceContainerLowest` | `#0F0D13` (alt: `#0E0E10`) | `[Sumber: Design System Stitch]` | Kontras terdalam (overlay rating poster) |
+| `surfaceContainerLow` | `#1D1B21` (alt: `#1B1B1D`) | `[Sumber: Design System Stitch]` | Elevasi 1: Card poster resting, search box background |
+| `surfaceContainer` | `#211F25` (alt: `#201F21`) | `[Sumber: Design System Stitch]` | Elevasi 2: Standard card item, filter chip default |
+| `surfaceContainerHigh` | `#2B292F` (alt: `#2A2A2C`) | `[Sumber: Design System Stitch]` | Elevasi 3: Header sticky, bottom bar container, rating badge container |
+| `surfaceContainerHighest` | `#36343A` (alt: `#353437`) | `[Sumber: Design System Stitch]` | Elevasi 4: Modal bottom sheet (Tulis/Edit Ulasan), context dialog |
+| `onSurface` | `#E7E0E9` (alt: `#E5E1E4`) | `[Sumber: Design System Stitch]` | Teks judul, label utama, ikon utama |
+| `onSurfaceVariant` | `#CAC4D0` (alt: `#CDC3D0`) | `[Sumber: Design System Stitch]` | Subtitle, metadata tahun/genre, placeholder input |
+| `surfaceVariant` | `#36343A` (alt: `#49454F`) | `[Sumber: Design System Stitch]` | Garis batas komponen pasif, chip tidak aktif |
+| `surfaceTint` | `#D0BCFF` | `[Sumber: Design System Stitch]` | Tint overlay elevasi khas M3 |
+| `inverseSurface` | `#E7E0E9` | `[Sumber: Design System Stitch]` | Snackbar / popup terbalik kontras tinggi |
+| `inverseOnSurface` | `#322F36` | `[Sumber: Design System Stitch]` | Teks di atas `inverseSurface` |
 
-> [!NOTE]
-> Pada kode HTML ketujuh layar, terdapat peranan dan bobot tambahan yang sering digunakan untuk komponen spesifik:
+### 1.4 Outline & Feedback (Error)
+| Peran M3 | Nilai Hex | Sumber | Penggunaan & Deskripsi |
+|---|---|---|---|
+| `outline` | `#948F9A` (alt: `#968E9A`) | `[Sumber: Design System Stitch]` | Border input form, divider tegas |
+| `outlineVariant` | `#49454F` (alt: `#4A454F`) | `[Sumber: Design System Stitch]` | Divider halus, outline filter chip unselected |
+| `error` | `#FFB4AB` | `[Sumber: Design System Stitch]` | Status error, tombol hapus ulasan |
+| `onError` | `#690005` | `[Sumber: Design System Stitch]` | Teks / ikon di atas elemen berlatar `error` |
+| `errorContainer` | `#93000A` | `[Sumber: Design System Stitch]` | Container pesan peringatan / error banner |
+| `onErrorContainer` | `#FFDAD6` | `[Sumber: Design System Stitch]` | Teks di atas `errorContainer` |
 
-| Role / Kelas | Ukuran | Bobot | Penggunaan Komponen | Status Sumber |
-|---|---|---|---|:---:|
-| `font-headline-lg` | `28px` / `30px` | 600 (Semi-bold) | Hero Title & Banner Utama | `[INFERENSI / TEBAKAN]` (Variasi HTML) |
-| `font-body-sm` | `12px` (`12sp`) | 400 (Regular) | Metadata durasi, tanggal rilis, sinopsis pendek | `[INFERENSI / TEBAKAN]` (Tidak ada di spec resmi) |
-| `text-[10px]` | `10px` (`10sp`) | 500 / 600 | Tag genre micro, pill bookmark kecil | `[INFERENSI / TEBAKAN]` (Arbitrary HTML) |
-| `text-[18px]` | `18px` (`18sp`) | 600 (Semi-bold) | Judul kartu poster film medium | `[INFERENSI / TEBAKAN]` (Arbitrary HTML) |
-| `text-[20px]` | `20px` (`20sp`) | 600 (Semi-bold) | Header section (Trending, Rekomendasi) | `[INFERENSI / TEBAKAN]` (Arbitrary HTML) |
-| `text-[24px]` | `24px` (`24sp`) | 600 / 700 | Judul film di layar detail | `[INFERENSI / TEBAKAN]` (Arbitrary HTML) |
-| `Material Symbols` | `20px` / `24px` | 400 | Ukuran Ikon Navigasi & Aksi | `[INFERENSI / TEBAKAN]` (Spesifikasi Ikon) |
-
----
-
-## 3. Bentuk Sudut (Corner Radius / Shape)
-
-Menggunakan filosofi kelengkungan dinamis Material 3 (*Rounded Pills* & *Organic Shapes*).
-
-### 3.1. Skala Radius Resmi
-
-| Token | Nilai Rem | Nilai Piksel / DP | Penggunaan Komponen | Sumber |
-|---|---|---|---|:---:|
-| `rounded-sm` | `0.25rem` | `4px` (`4dp`) | Tooltip kecil, indikator mikro | `[RESMI / STITCH]` |
-| `rounded` (`DEFAULT`) | `0.5rem` | `8px` (`8dp`) | Thumbnail kecil, segmented control item | `[RESMI / STITCH]` |
-| `rounded-md` | `0.75rem` | `12px` (`12dp`) | Kartu film horizontal, input container | `[RESMI / STITCH]` |
-| `rounded-lg` | `1.0rem` | `16px` (`16dp`) | Poster card standar (2:3 ratio), pop-up dialog | `[RESMI / STITCH]` |
-| `rounded-xl` | `1.5rem` | `24px` (`24dp`) | Featured banner poster, filter drawer | `[RESMI / STITCH]` |
-| `rounded-full` | `9999px` | `Pill Shape` | Filter chip, button CTA, avatar, rating badge | `[RESMI / STITCH]` |
-
-### 3.2. Radius Khusus Komponen *(Berdasarkan HTML)*
-
-| Komponen | Nilai Radius | Keterangan | Status Sumber |
-|---|---|---|:---:|
-| **Search Anchor Bar** | `28px` (`rounded-3xl`) | Input pencarian di header | `[INFERENSI / TEBAKAN]` |
-| **Modal Bottom Sheet** | Top-left & Top-right `28px` | `rounded-t-3xl` | `[INFERENSI / TEBAKAN]` |
-| **Poster Card Overlay** | Bottom `16px` / `24px` | `rounded-b-xl` | `[INFERENSI / TEBAKAN]` |
-
----
-
-## 4. Jarak & Spasi (Spacing, Margins, Gutters, Gaps)
-
-Sistem spasi berpegang pada ritme **8-point grid** dengan sub-kelipatan **4-point micro-grid**.
-
-### 4.1. Skala Spasi Resmi
-
-| Token Spacing | Nilai Rem | Nilai Piksel / DP | Penerapan Komponen | Sumber |
-|---|---|---|---|:---:|
-| `space-xs` | `0.25rem` | `4px` (`4dp`) | Jarak antara ikon dan teks dalam rating pill | `[RESMI / STITCH]` |
-| `space-sm` | `0.5rem` | `8px` (`8dp`) | Jarak antar elemen dalam list / tag genre | `[RESMI / STITCH]` |
-| `space-md` | `1.0rem` | `16px` (`16dp`) | Padding dalam kartu (card body padding) | `[RESMI / STITCH]` |
-| `space-lg` | `1.5rem` | `24px` (`24dp`) | Jarak vertikal antar section konten | `[RESMI / STITCH]` |
-| `space-xl` | `2.0rem` | `32px` (`32dp`) | Jarak vertikal hero header ke section pertama | `[RESMI / STITCH]` |
-| `gutter` | `1.0rem` | `16px` (`16dp`) | Jarak antar kolom pada grid tablet/desktop | `[RESMI / STITCH]` |
-| `gutter-mobile` | `0.75rem` | `12px` (`12dp`) | Jarak antar poster film pada 2-column grid mobile | `[RESMI / STITCH]` |
-| `margin` | `1.5rem` | `24px` (`24dp`) | Margin luar layar pada mode tablet | `[RESMI / STITCH]` |
-| `margin-mobile` | `1.0rem` | `16px` (`16dp`) | Margin luar layar kiri-kanan pada mobile | `[RESMI / STITCH]` |
-
-### 4.2. Spasi Mikro & Arbitrary yang Digunakan di HTML
-
-> [!NOTE]
-> Pada ketujuh berkas layar HTML, ditemukan utilisasi kelas Tailwind mikro untuk penyesuaian detail layout:
-
-| Kelas Utilitas HTML | Nilai Piksel / DP | Penggunaan Utama | Status Sumber |
-|---|---|---|:---:|
-| `py-0.5` / `my-0.5` | `2px` (`2dp`) | Padding vertikal rating badge / micro offset | `[INFERENSI / TEBAKAN]` |
-| `gap-1` / `p-1` | `4px` (`4dp`) | Gap antar icon dan teks rating | `[INFERENSI / TEBAKAN]` |
-| `py-1.5` / `px-1.5` | `6px` (`6dp`) | Padding dalam chip genre / tag status | `[INFERENSI / TEBAKAN]` |
-| `gap-1.5` | `6px` (`6dp`) | Jarak antar item badge | `[INFERENSI / TEBAKAN]` |
-| `px-3` / `py-2` | `12px` / `8px` | Padding horizontal tombol filled/tonal | `[INFERENSI / TEBAKAN]` |
-| `px-4` / `py-3` | `16px` / `12px` | Padding horizontal list item reviewer & review card | `[INFERENSI / TEBAKAN]` |
-| `pt-safe` | `44px` - `48px` | Padding atas untuk status bar / notch perangkat mobile | `[INFERENSI / TEBAKAN]` |
-| `pb-20` / `pb-24` | `80px` - `96px` | Padding bawah layar agar konten tidak tertutup Bottom Navigation Bar | `[INFERENSI / TEBAKAN]` |
+### 1.5 Fixed Roles (Tonal Fixed Elements)
+| Peran M3 | Nilai Hex | Sumber | Penggunaan |
+|---|---|---|---|
+| `primaryFixed` | `#E9DDFF` | `[Sumber: Design System Stitch]` | Elemen tetap yang membutuhkan aksen primer konstan |
+| `primaryFixedDim` | `#D0BCFF` | `[Sumber: Design System Stitch]` | Versi redup dari `primaryFixed` |
+| `onPrimaryFixed` | `#210F48` | `[Sumber: Design System Stitch]` | Teks di atas `primaryFixed` |
+| `onPrimaryFixedVariant` | `#4D3D76` | `[Sumber: Design System Stitch]` | Teks pendukung di atas `primaryFixed` |
+| `secondaryFixed` | `#E9DEF9` | `[Sumber: Design System Stitch]` | Elemen filter chip tetap |
+| `secondaryFixedDim` | `#CCC2DC` | `[Sumber: Design System Stitch]` | Versi redup `secondaryFixed` |
+| `onSecondaryFixed` | `#1E182B` | `[Sumber: Design System Stitch]` | Teks di atas `secondaryFixed` |
+| `onSecondaryFixedVariant` | `#4A4359` | `[Sumber: Design System Stitch]` | Teks pendukung di atas `secondaryFixed` |
+| `tertiaryFixed` | `#FFD9E3` | `[Sumber: Design System Stitch]` | Badge rating fixed |
+| `tertiaryFixedDim` | `#EFB8C8` | `[Sumber: Design System Stitch]` | Versi redup `tertiaryFixed` |
+| `onTertiaryFixed` | `#31111D` | `[Sumber: Design System Stitch]` | Teks di atas `tertiaryFixed` |
+| `onTertiaryFixedVariant` | `#633B48` | `[Sumber: Design System Stitch]` | Teks pendukung di atas `tertiaryFixed` |
 
 ---
 
-## 5. Ringkasan & Panduan Konversi ke Android (Compose)
+## 2. Skala Tipografi (Typography Scale)
 
-Untuk implementasi Jetpack Compose di `MovieVerse`:
+- **Keluarga Font Utama**: `Roboto Flex` `[Sumber: Design System Stitch]`
+- *Catatan Implementasi Web/HTML*: Pada ekspor HTML Stitch, font fallback web menggunakan `Inter`, namun spesifikasi desain M3 mewajibkan `Roboto Flex`.
 
-1. **Colors**: Buat `Color.kt` dan `Theme.kt` dengan `darkColorScheme()` menggunakan token resmi M3 di Bagian 1.
-2. **Typography**: Definisikan `Typography.kt` menggunakan font family `RobotoFlex` dengan hierarki M3 di Bagian 2.
-3. **Shapes**: Definisikan `Shapes.kt` dengan `CornerBasedShape` (`RoundedCornerShape(8.dp)`, `12.dp`, `16.dp`, `24.dp`, `28.dp`, dan `CircleShape`).
-4. **Dimens**: Definisikan `Dimens.kt` untuk nilai spasi `4.dp`, `8.dp`, `12.dp`, `16.dp`, `24.dp`, `32.dp`.
+| Kategori M3 | Ukuran (Size) | Line Height | Bobot (Weight) | Letter Spacing | Sumber | Kasus Penggunaan Utama |
+|---|---|---|---|---|---|---|
+| `displayLarge` | 57px | 64px | Regular (400) | -0.25px | `[Sumber: Design System Stitch]` | Hero billboard title (tablet / desktop) |
+| `displayMedium` | 45px | 52px | Regular (400) | 0.0px | `[Asumsi / Ekstrapolasi]` | Header promosi besar |
+| `displaySmall` (Mobile Hero) | 36px | 44px | Regular (400) / Bold (700) | 0.0px (`-0.02em`) | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Judul layar utama (e.g. CineVerse Splash / Hero) |
+| `headlineLarge` | 32px (alt: 28px) | 40px (alt: 36px) | SemiBold (600) | 0.0px | `[Sumber: HTML Layar]` | Judul section utama pada overlay |
+| `headlineMedium` | 28px (alt: 22px) | 36px (alt: 28px) | Regular (400) / Bold (700) | 0.0px | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Judul film unggulan (Hero Banner Movie Title), logo brand MovieVerse |
+| `headlineSmall` | 24px | 32px | Regular (400) | 0.0px | `[Asumsi / Ekstrapolasi]` | Judul modal dialog |
+| `titleLarge` | 22px (alt: 18px) | 28px (alt: 24px) | Medium (500) / SemiBold (600) | 0.0px | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Judul section ("Film Populer", "Rilis Terbaru", "Koleksi Saya") |
+| `titleMedium` | 16px | 24px (alt: 22px) | Medium (500) / SemiBold (600) | +0.15px | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Judul kartu film (Movie Card Title), judul ulasan |
+| `titleSmall` | 14px | 20px | Medium (500) | +0.10px | `[Asumsi / Ekstrapolasi]` | Sub-judul kartu daftar ringkas |
+| `bodyLarge` | 16px | 24px | Regular (400) | +0.50px | `[Sumber: Design System Stitch]` | Sinopsis film lengkap, isi teks ulasan panjang |
+| `bodyMedium` | 14px | 20px | Regular (400) | +0.25px | `[Sumber: Design System Stitch]` | Teks ulasan standar, bio reviewer, input form text |
+| `bodySmall` | 12px | 16px | Regular (400) | +0.40px | `[Sumber: HTML Layar]` | Metadata pendukung (Tahun rilis • Genre • Durasi) |
+| `labelLarge` | 14px | 20px | Medium (500) / SemiBold (600) | +0.10px | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Teks tombol ("Tonton Trailer", "Tulis Ulasan", "Simpan") |
+| `labelMedium` | 12px | 16px | Medium (500) / SemiBold (600) | +0.50px (`+0.02em`) | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Chip kategori filter ("Semua", "Aksi", "Sci-Fi"), angka rating bintang |
+| `labelSmall` | 11px | 16px (alt: 14px) | Medium (500) / SemiBold (600) | +0.50px (`+0.03em`) | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Label navigasi bawah (Jelajah, Kategori, Jurnal, Akun), badge status |
+
+---
+
+## 3. Bentuk Sudut (Shape Corners & Corner Radii)
+
+Skema bentuk mengacu pada hierarki sudut Material 3 berbasis kurva organik dan pill bulat untuk kenyamanan interaksi sentuhan.
+
+| Token M3 | Nilai Radius (dp / px) | Nilai Tailwind | Sumber | Kasus Penggunaan Komponen |
+|---|---|---|---|---|
+| **Extra Small** | `4dp` (0.25rem) | `rounded-sm` / `rounded` | `[Sumber: Design System Stitch]` | Mini badge rating poster (`px-1.5 py-0.5 rounded`), tag status kecil |
+| **Small** | `8dp` (0.5rem) | `rounded-lg` / `rounded-DEFAULT` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Badge rating di hero banner, thumbnail item baris, tooltip |
+| **Medium** | `12dp` (0.75rem) | `rounded-xl` / `rounded-md` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Poster kartu film (2:3 aspect ratio), Search Bar box input, tombol aksi sekunder |
+| **Large** | `16dp` (1.0rem) | `rounded-2xl` / `rounded-lg` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Hero Feature Card (Dune 2 Banner), Modal Card Ulasan, dialog box |
+| **Extra Large** | `28dp` (1.75rem) | `rounded-3xl` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Top header Modal Bottom Sheet (Tulis Ulasan / Edit Ulasan), Floating Action Button (FAB) |
+| **Full (Pill)** | `9999px` (Full Pill) | `rounded-full` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` | Filter chip tombol, Active navigation pill indicator (64dp x 32dp), Button utama ("Tonton Trailer"), Avatar profil bulat |
+
+---
+
+## 4. Jarak & Tata Letak (Spacing & Layout Grid)
+
+Sistem layout menggunakan grid modular 8-point baseline dengan micro-increment 4-point.
+
+### 4.1 Spacing Scale (Padding / Margin / Gap)
+| Token Token Spacing | Ukuran (dp / px) | Nilai Tailwind | Sumber | Penggunaan |
+|---|---|---|---|---|
+| `space-none` | `0dp` | `p-0`, `m-0`, `gap-0` | `[Sumber: Standar M3]` | Reset margin/padding |
+| `space-xs` | `4dp` (0.25rem) | `space-xs` / `p-1`, `gap-1` | `[Sumber: Design System Stitch]` | Jarak antar ikon dan teks inline, gap badge rating bintang |
+| `space-sm` | `8dp` (0.5rem) | `space-sm` / `p-2`, `gap-2` | `[Sumber: Design System Stitch]` | Jarak antar chip filter dalam horizontal scroll, jarak elemen form rapat |
+| `space-md` | `16dp` (1.0rem) | `space-md` / `p-4`, `gap-4` | `[Sumber: Design System Stitch]` | Padding dalam kartu film, gap antar grid kolom poster, padding container bottom sheet |
+| `space-lg` | `24dp` (1.5rem) | `space-lg` / `p-6`, `gap-6` | `[Sumber: Design System Stitch]` | Jarak vertikal antar section ("Film Populer" ke "Rilis Terbaru"), bottom padding modal |
+| `space-xl` | `32dp` (2.0rem) | `space-xl` / `p-8`, `gap-8` | `[Sumber: Design System Stitch]` | Padding hero banner besar, jarak konten akhir sebelum bottom bar |
+
+### 4.2 Grid & Viewport Metrics
+| Parameter | Nilai (Mobile) | Nilai (Tablet / Wide) | Sumber |
+|---|---|---|---|
+| **Screen Margin (Canvas)** | `16dp` (`margin-mobile` / `px-4`) | `24dp` (`margin` / `px-6`) | `[Sumber: Design System Stitch]` |
+| **Gutter Grid (Poster)** | `12dp` (`gutter-mobile` / `gap-3`) | `16dp` (`gutter` / `gap-4`) | `[Sumber: Design System Stitch]` |
+| **Kolom Grid Poster** | 2 Kolom (`grid-cols-2`) | 3–4 Kolom | `[Sumber: HTML Layar]` & `[Asumsi / Ekstrapolasi]` |
+| **Tinggi Top App Bar** | `64dp` (`h-16`) | `64dp` (`h-16`) | `[Sumber: HTML Layar]` |
+| **Tinggi Bottom Navigation** | `80dp` (dengan safe-area) | `80dp` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` |
+| **Ukuran Indikator Aktif Navigasi** | `56dp x 32dp` / `64dp x 32dp` | `64dp x 32dp` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` |
+| **Minimum Touch Target** | `44dp`–`48dp` (`min-h-[44px]` / `w-11 h-11`) | `48dp` | `[Sumber: HTML Layar]` & `[Sumber: Standar M3]` |
+| **Aspect Ratio Poster Film** | `2:3` (`aspect-[2/3]`) | `2:3` | `[Sumber: Design System Stitch]` & `[Sumber: HTML Layar]` |
