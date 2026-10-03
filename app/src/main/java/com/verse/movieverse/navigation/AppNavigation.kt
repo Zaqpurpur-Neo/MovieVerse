@@ -158,6 +158,7 @@ fun AppNavigation() {
             composable<PencarianAktif> {
                 PencarianAktifScreen(
                     onSearch = { query -> navController.navigate(HasilPencarian(query)) },
+                    onOpenDetail = { movieId -> navController.navigate(DetailFilm(movieId)) },
                     onNavigateUp = { navController.navigateUp() }
                 )
             }
