@@ -133,7 +133,19 @@ fun AppNavigation() {
                 )
             }
             composable<Kategori> {
-                KategoriScreen()
+                KategoriScreen(
+                    onOpenSearch = { navController.navigate(PencarianAktif) },
+                    onOpenGenre = { genre -> navController.navigate(HasilPencarian(genre)) },
+                    onOpenJurnal = {
+                        navController.navigate(Jurnal) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
             }
             composable<Jurnal> {
                 JurnalScreen()

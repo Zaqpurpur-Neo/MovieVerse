@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel menyimpan state agar tidak hilang saat konfigurasi berubah (misal: layar diputar).
- * UI hanya membaca uiState (Unidirectional Data Flow / UDF), tidak mengubah state secara langsung.
+ * UI hanya membaca uiState (Unidirectional Data Flow / UDF).
  */
 class JelajahViewModel : ViewModel() {
 
@@ -21,6 +21,10 @@ class JelajahViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<MovieSummary>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<MovieSummary>>> = _uiState.asStateFlow()
+
+    // State filter disimpan di ViewModel dan diubah lewat fungsi (UDF).
+    private val _selectedGenre = MutableStateFlow("Semua")
+    val selectedGenre: StateFlow<String> = _selectedGenre.asStateFlow()
 
     init {
         loadMovies()
@@ -33,7 +37,6 @@ class JelajahViewModel : ViewModel() {
                 val movies = repository.getMovies()
                 _uiState.update { UiState.Success(movies) }
             } catch (e: Exception) {
-                // Pesan error disederhanakan untuk pengguna, tanpa stack trace
                 _uiState.update { UiState.Error("Gagal memuat data. Periksa koneksi internet Anda.") }
             }
         }
@@ -41,5 +44,9 @@ class JelajahViewModel : ViewModel() {
 
     fun retry() {
         loadMovies()
+    }
+
+    fun selectGenre(genre: String) {
+        _selectedGenre.value = genre
     }
 }
