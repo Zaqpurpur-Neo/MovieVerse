@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -34,12 +35,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,6 +50,10 @@ import com.verse.movieverse.ui.common.UiState
 import com.verse.movieverse.ui.components.PosterCard
 import com.verse.movieverse.ui.components.PosterImage
 
+/**
+ * Layar Jelajah. TANPA Scaffold/TopAppBar dan TANPA spinner penuh layar:
+ * kerangka layar selalu tampil, tiap bagian mengisi state-nya sendiri.
+ */
 @Composable
 fun JelajahScreen(
     onOpenSearch: () -> Unit,
@@ -55,13 +61,85 @@ fun JelajahScreen(
     modifier: Modifier = Modifier
 ) {
     val viewModel: JelajahViewModel = viewModel()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedGenre by viewModel.selectedGenre.collectAsStateWithLifecycle()
+    val hero by viewModel.hero.collectAsStateWithLifecycle()
+    val populer by viewModel.populer.collectAsStateWithLifecycle()
+    val sedangTayang by viewModel.sedangTayang.collectAsStateWithLifecycle()
 
-    when (val state = uiState) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        // a. Kolom pencarian tiruan (tidak bisa diketik).
+        KotakPencarianTiruan(
+            // State hoisting: aksi navigasi diteruskan ke parent lewat lambda.
+            onClick = onOpenSearch
+        )
+
+        // b. Chip genre.
+        ChipGenre(terpilih = selectedGenre) { genre -> viewModel.selectGenre(genre) }
+
+        // c. Hero "Film Unggulan".
+        BagianMuat(state = hero, tinggi = 220.dp, onRetry = { viewModel.retryHero() }) { film ->
+            HeroCard(
+                film = film,
+                onOpenDetail = onOpenDetail,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+            )
+        }
+
+        // d. Section Film Populer.
+        SectionHeader(
+            judul = "Film Populer",
+            subjudul = "Paling populer di TMDB",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        BagianMuat(state = populer, tinggi = 240.dp, onRetry = { viewModel.retryPopuler() }) { daftar ->
+            if (daftar.isEmpty()) {
+                Text(
+                    text = "Tidak ada film untuk genre ini",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+                )
+            } else {
+                BarisPoster(daftar = daftar, onOpenDetail = onOpenDetail)
+            }
+        }
+
+        // e. Section Sedang Tayang.
+        SectionHeader(
+            judul = "Sedang Tayang",
+            subjudul = "Film yang sedang tayang di bioskop",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        BagianMuat(state = sedangTayang, tinggi = 240.dp, onRetry = { viewModel.retrySedangTayang() }) { daftar ->
+            BarisPoster(daftar = daftar, onOpenDetail = onOpenDetail)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+/**
+ * Materi UiState: satu komponen memuat tiga keadaan (Loading/Error/Success)
+ * supaya tiap bagian layar seragam dan bisa punya state sendiri.
+ */
+@Composable
+private fun <T> BagianMuat(
+    state: UiState<T>,
+    tinggi: Dp,
+    onRetry: () -> Unit,
+    konten: @Composable (T) -> Unit
+) {
+    when (state) {
         is UiState.Loading -> {
             Box(
-                modifier = modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(tinggi)
+                    .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -70,147 +148,116 @@ fun JelajahScreen(
 
         is UiState.Error -> {
             Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(tinggi)
+                    .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = state.message,
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { viewModel.retry() }) {
+                Button(onClick = onRetry) {
                     Text("Coba Lagi")
                 }
             }
         }
 
-        is UiState.Success -> {
-            val movies = state.data
+        is UiState.Success -> konten(state.data)
+    }
+}
 
-            // Materi State: remember digunakan untuk menghitung daftar turunan
-            // hanya saat movies atau selectedGenre berubah, menghindari komputasi ulang tiap recomposition.
-            val featuredMovie = remember(movies) {
-                movies.maxByOrNull { it.popularity }
-            }
+@Composable
+private fun KotakPencarianTiruan(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            // State hoisting: klik membuka layar pencarian lewat lambda parent.
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = "Cari",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Cari film, sutradara, aktor...",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
-            val popularMovies = remember(movies, selectedGenre) {
-                movies.filter { selectedGenre == "Semua" || it.genres.contains(selectedGenre) }
-                    .sortedByDescending { it.popularity }
-                    .take(10)
-            }
+@Composable
+private fun ChipGenre(terpilih: String, onPilih: (String) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(vertical = 8.dp)
+    ) {
+        // Materi Lazy: key wajib agar chip dikenali dari nilainya, bukan posisi.
+        items(listOf("Semua", "Aksi", "Drama", "Sci-Fi", "Horor"), key = { it }) { genre ->
+            FilterChip(
+                selected = terpilih == genre,
+                onClick = { onPilih(genre) },
+                label = { Text(genre) }
+            )
+        }
+    }
+}
 
-            val recentMovies = remember(movies, selectedGenre) {
-                movies.filter { it.year >= 2016 && (selectedGenre == "Semua" || it.genres.contains(selectedGenre)) }
-                    .sortedByDescending { it.releaseDate }
-                    .take(10)
-            }
+@Composable
+private fun SectionHeader(judul: String, subjudul: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = judul,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = subjudul,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // a. Kolom pencarian tiruan
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        // State hoisting: aksi navigasi diteruskan ke parent lewat lambda
-                        .clickable { onOpenSearch() },
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = "Cari",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Cari film, sutradara, aktor...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // b. Chip genre
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 8.dp)
-                ) {
-                    // Parameter 'key' WAJIB di Lazy Layout (materi Lazy)
-                    items(listOf("Semua", "Aksi", "Drama", "Sci-Fi", "Horor"), key = { it }) { genre ->
-                        FilterChip(
-                            selected = selectedGenre == genre,
-                            onClick = { viewModel.selectGenre(genre) },
-                            label = { Text(genre) }
-                        )
-                    }
-                }
-
-                // c. Hero "Film Unggulan"
-                featuredMovie?.let { movie ->
-                    HeroCard(
-                        movie = movie,
-                        onTrailerClick = { onOpenDetail(movie.id) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-                    )
-                }
-
-                // d. Section "Film Populer"
-                SectionHeader(
-                    title = "Film Populer",
-                    subtitle = "Paling populer di katalog",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                if (popularMovies.isEmpty()) {
-                    Text(
-                        text = "Tidak ada film untuk genre ini",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-                    )
-                } else {
-                    MovieRow(movies = popularMovies, onMovieClick = onOpenDetail)
-                }
-
-                // e. Section "Baru di Katalog"
-                SectionHeader(
-                    title = "Baru di Katalog",
-                    subtitle = "Film rilis 2016-2017",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-                if (recentMovies.isEmpty()) {
-                    Text(
-                        text = "Tidak ada film untuk genre ini",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-                    )
-                } else {
-                    MovieRow(movies = recentMovies, onMovieClick = onOpenDetail)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+@Composable
+private fun BarisPoster(daftar: List<MovieSummary>, onOpenDetail: (Int) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Materi Lazy: key wajib agar item poster dikenali dari id film.
+        items(daftar, key = { it.id }) { film ->
+            PosterCard(
+                movie = film,
+                // State hoisting: aksi buka detail dilempar ke parent.
+                onClick = { onOpenDetail(film.id) },
+                modifier = Modifier.width(130.dp)
+            )
         }
     }
 }
 
 @Composable
 private fun HeroCard(
-    movie: MovieSummary,
-    onTrailerClick: () -> Unit,
+    film: MovieSummary,
+    onOpenDetail: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -221,10 +268,10 @@ private fun HeroCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             PosterImage(
-                url = movie.posterUrl,
+                url = film.posterUrl,
                 modifier = Modifier.fillMaxSize()
             )
-            // Gradien gelap vertikal di bawah agar teks terbaca
+            // Gradien gelap vertikal di bawah agar teks terbaca.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -255,81 +302,77 @@ private fun HeroCard(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = film.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    // Badge rating.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.width(16.dp),
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = String.format("%.1f", film.rating),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
+                }
+
                 Text(
-                    text = movie.title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${movie.year} • ${movie.genres.take(2).joinToString(", ")}",
+                    text = "${film.year} • ${film.genres.take(2).joinToString(", ")}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = onTrailerClick,
-                        shape = RoundedCornerShape(50),
+                        // State hoisting: tombol trailer membuka detail film.
+                        onClick = { onOpenDetail(film.id) },
+                        shape = RoundedCornerShape(999.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.height(16.dp))
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.width(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Tonton Trailer")
                     }
                     OutlinedButton(
                         onClick = { /* diaktifkan di Fase 6 */ },
-                        shape = RoundedCornerShape(50),
+                        shape = RoundedCornerShape(999.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                     ) {
-                        Icon(Icons.Default.BookmarkBorder, contentDescription = null, modifier = Modifier.height(16.dp))
+                        Icon(
+                            Icons.Default.BookmarkBorder,
+                            contentDescription = null,
+                            modifier = Modifier.width(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Simpan")
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun MovieRow(
-    movies: List<MovieSummary>,
-    onMovieClick: (Int) -> Unit
-) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Parameter 'key' WAJIB di Lazy Layout (materi Lazy)
-        items(movies, key = { it.id }) { movie ->
-            PosterCard(
-                movie = movie,
-                onClick = { onMovieClick(movie.id) },
-                modifier = Modifier.width(130.dp)
-            )
         }
     }
 }

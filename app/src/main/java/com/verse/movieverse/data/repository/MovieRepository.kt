@@ -1,61 +1,144 @@
 package com.verse.movieverse.data.repository
 
+import com.verse.movieverse.data.model.GenreMap
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.data.model.MovieSummary
-import com.verse.movieverse.data.model.toDomain
+import com.verse.movieverse.data.model.toDetail
+import com.verse.movieverse.data.model.toSummary
 import com.verse.movieverse.data.remote.ApiClient
 import com.verse.movieverse.data.remote.MovieApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.verse.movieverse.data.remote.TmdbPageDto
 
 /**
- * Repository sebagai sumber data tunggal (Single Source of Truth) untuk data film.
- *
- * Mengambil data dari MovieApi (Retrofit), memetakan DTO menjadi model domain,
- * dan menyediakan fungsi siap pakai untuk ViewModel.
+ * Hasil satu halaman film dari TMDB.
+ */
+data class MoviePage(
+    val movies: List<MovieSummary>,
+    val page: Int,
+    val totalPages: Int,
+    val totalResults: Int
+)
+
+/**
+ * Repository = satu-satunya pintu data untuk ViewModel.
+ * Repository memanggil MovieApi, lalu memetakan DTO TMDB ke model domain.
  */
 class MovieRepository(
     private val api: MovieApi = ApiClient.movieApi
 ) {
 
-    companion object {
-        // Cache daftar film di memori, dipakai bersama oleh SEMUA instance repository.
-        // Efeknya: satu unduhan untuk semua layar (Jelajah, Kategori, Pencarian, dll).
-        // @Volatile agar nilai yang ditulis satu thread langsung terlihat thread lain.
-        // Cache TIDAK disimpan ke disk, jadi hilang saat aplikasi ditutup/dihentikan.
-        @Volatile
-        private var cache: List<MovieSummary>? = null
+    private companion object {
+        const val LANGUAGE = "en-US"
     }
 
     /**
-     * Mengambil seluruh daftar ringkasan film.
-     * Bila cache sudah terisi, kembalikan tanpa menyentuh jaringan.
+     * Sementara: semua layar yang masih memakai getMovies() akan mendapat
+     * film populer halaman 1. Nanti diganti per layar sesuai kebutuhan.
      */
     suspend fun getMovies(): List<MovieSummary> {
-        // Baca sekali ke variabel lokal agar aman dari perubahan antar-baca (pola @Volatile).
-        val cached = cache
-        if (cached != null) return cached
-
-        // Panggil API TERLEBIH DAHULU. Bila gagal, exception naik ke ViewModel
-        // dan cache tetap null -> tombol "Coba Lagi" akan memanggil jaringan lagi.
-        val dtos = api.getMovies()
-
-        // Pemetaan ratusan DTO dipindah ke Dispatchers.Default agar tidak membebani thread UI.
-        val domain = withContext(Dispatchers.Default) {
-            dtos.map { it.toDomain() }
-        }
-
-        // Hanya simpan ke cache setelah pemetaan sukses.
-        cache = domain
-        return domain
+        return getPopular(genre = null, page = 1).movies
     }
 
-    /**
-     * Mengambil detail lengkap satu film berdasarkan ID.
-     * Tidak di-cache: tiap film berbeda dan pemetaannya hanya satu objek (trivial),
-     * jadi tidak perlu pindah thread.
-     */
+    suspend fun getPopular(genre: String?, page: Int): MoviePage {
+        val dto = api.discover(
+            genres = genreIdOrNull(genre),
+            sortBy = "popularity.desc",
+            minVotes = 100,
+            releaseLte = null,
+            page = page,
+            language = LANGUAGE,
+            includeAdult = false
+        )
+        return toMoviePage(dto)
+    }
+
+    suspend fun getNowPlaying(page: Int): MoviePage {
+        val dto = api.nowPlaying(
+            page = page,
+            language = LANGUAGE
+        )
+        return toMoviePage(dto)
+    }
+
+    suspend fun getTopRated(page: Int): MoviePage {
+        val dto = api.discover(
+            genres = null,
+            sortBy = "vote_average.desc",
+            minVotes = 2000,
+            releaseLte = null,
+            page = page,
+            language = LANGUAGE,
+            includeAdult = false
+        )
+        return toMoviePage(dto)
+    }
+
+    suspend fun getClassics(page: Int): MoviePage {
+        val dto = api.discover(
+            genres = null,
+            sortBy = "vote_average.desc",
+            minVotes = 1000,
+            releaseLte = "1989-12-31",
+            page = page,
+            language = LANGUAGE,
+            includeAdult = false
+        )
+        return toMoviePage(dto)
+    }
+
+    suspend fun getByGenre(genre: String, page: Int): MoviePage {
+        val dto = api.discover(
+            genres = GenreMap.idDariNama(genre)?.toString(),
+            sortBy = "popularity.desc",
+            minVotes = 50,
+            releaseLte = null,
+            page = page,
+            language = LANGUAGE,
+            includeAdult = false
+        )
+        return toMoviePage(dto)
+    }
+
+    suspend fun search(query: String, page: Int): MoviePage {
+        val dto = api.searchMovie(
+            query = query,
+            page = page,
+            language = LANGUAGE,
+            includeAdult = false
+        )
+        return toMoviePage(dto)
+    }
+
     suspend fun getMovieDetail(id: Int): MovieDetail {
-        return api.getMovieDetail(id).toDomain()
+        val dto = api.movieDetail(
+            id = id,
+            append = "credits,videos",
+            language = LANGUAGE
+        )
+        val detail = dto.toDetail()
+
+        if (detail.title.isBlank()) {
+            throw IllegalStateException("Detail film tidak ditemukan.")
+        }
+
+        return detail
+    }
+
+    private fun toMoviePage(dto: TmdbPageDto): MoviePage {
+        val movies = dto.results
+            ?.mapNotNull { it.toSummary() }
+            .orEmpty()
+
+        return MoviePage(
+            movies = movies,
+            page = dto.page ?: 1,
+            totalPages = dto.totalPages ?: 1,
+            totalResults = dto.totalResults ?: movies.size
+        )
+    }
+
+    private fun genreIdOrNull(genre: String?): String? {
+        if (genre == null || genre == "Semua") return null
+        return GenreMap.idDariNama(genre)?.toString()
     }
 }

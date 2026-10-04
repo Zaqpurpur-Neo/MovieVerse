@@ -17,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -53,7 +51,7 @@ fun HasilPencarianScreen(
 ) {
     val viewModel: HasilPencarianViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val jumlahTampil by viewModel.jumlahTampil.collectAsStateWithLifecycle()
+    val sedangMuatLagi by viewModel.sedangMuatLagi.collectAsStateWithLifecycle()
 
     // Setiap query dari rute navigasi memicu pencarian satu kali.
     LaunchedEffect(query) {
@@ -95,10 +93,12 @@ fun HasilPencarianScreen(
             }
 
             is UiState.Success -> {
-                val hasil = state.data.hasil
+                val data = state.data
+                val hasil = data.hasil
+
                 Column(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        text = "Menampilkan ${hasil.size} hasil film untuk \"${state.data.query}\"",
+                        text = "Menampilkan ${data.totalHasil} hasil film untuk \"${data.query}\"",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -110,7 +110,7 @@ fun HasilPencarianScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Tidak ada film untuk \"${state.data.query}\"",
+                                text = "Tidak ada film untuk \"${data.query}\"",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -129,41 +129,49 @@ fun HasilPencarianScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Urutkan: Popularitas",
+                                // Bila query genre, TMDB discover diurutkan popularitas.
+                                // Bila query bebas, TMDB search mengikuti relevansi.
+                                text = if (data.modeGenre) {
+                                    "Urutkan: Popularitas"
+                                } else {
+                                    "Urutkan: Relevansi"
+                                },
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            // Parameter 'key' WAJIB di Lazy Layout (materi Lazy):
-                            // item dikenali dari id film, bukan posisi, agar recomposition efisien.
-                            items(hasil.take(jumlahTampil), key = { it.id }) { film ->
+                            // Materi Lazy: key wajib agar item dikenali dari id film,
+                            // bukan dari posisi, terutama saat daftar bertambah.
+                            items(hasil, key = { it.id }) { film ->
                                 KartuHasil(
                                     film = film,
-                                    // State hoisting: aksi buka detail dilempar ke parent lewat lambda.
+                                    // State hoisting: aksi buka detail dilempar ke parent.
                                     onClick = { onOpenDetail(film.id) },
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                                 )
                             }
 
-                            if (hasil.size > jumlahTampil) {
+                            if (data.bisaMuatLagi) {
                                 item {
-                                    // Jumlah film yang tampil disimpan di ViewModel,
-                                    // jadi tidak reset saat layar direcompose.
+                                    // State tombol dan data halaman disimpan di ViewModel,
+                                    // bukan di Screen, agar tidak hilang saat recomposition.
                                     Button(
                                         onClick = { viewModel.muatLagi() },
+                                        enabled = !sedangMuatLagi,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(horizontal = 16.dp, vertical = 8.dp)
                                     ) {
-                                        Icon(
-                                            Icons.Default.KeyboardArrowDown,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Muat Lebih Banyak (${hasil.size - jumlahTampil} film lagi)")
+                                        if (sedangMuatLagi) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(18.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Text("Muat Lebih Banyak")
+                                        }
                                     }
                                 }
                             }
@@ -281,23 +289,6 @@ private fun KartuHasil(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (film.trailerId != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Trailer",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
         }
     }
