@@ -1,14 +1,14 @@
 # MovieVerse — Master Guidebook
 
 **Project:** MovieVerse — aplikasi Android native (Jetpack Compose) untuk menjelajah film, menyimpan watchlist, dan menulis jurnal ulasan; seluruh metadata film berasal dari TMDB API v3.
-**Repo:** `https://github.com/Zaqpurpur-Neo/MovieVerse` (HEAD `1ab8bde`, branch `main`)
+**Repo:** `https://github.com/Zaqpurpur-Neo/MovieVerse` (HEAD `14445c4`, branch `main`, sinkron dengan `origin`)
 **Compiled:** 2026-10-04 (state reconciled against working tree + `assembleDebug` + installasi nyata ke perangkat)
 **Compiled by:** Merpatidove
 **Public docs:** `D:\movieverse\README.md` — **saat ini kosong** (lihat §10 Known Issues)
 **One-command deploy:** `.\gradlew.bat :app:assembleDebug --console=plain` → `adb install -r app\build\outputs\apk\debug\app-debug.apk` → `adb shell am start -n com.verse.movieverse/.MainActivity`
 **Change history:** §14
 
-> **Status (2026-10-04):** ALIVE. Layer Compose 4 tab + 3 layar non-tab, Room untuk data lokal, Retrofit ke TMDB. Build hijau (`BUILD SUCCESSFUL`), APK terpasang dan ter-smoke-test di POCO X7 (API 35) — semua 4 tab bottom-nav bisa dinavigasi tanpa crash. Perubahan terbaru: refactor mayor di commit `1ab8bde` (push masih gagal 403, lihat §7).
+> **Status (2026-10-04):** ALIVE dan **ter-push**. Layer Compose 4 tab + 3 layar non-tab, Room untuk data lokal, Retrofit ke TMDB. Build hijau (`BUILD SUCCESSFUL`), APK terpasang dan ter-smoke-test di POCO X7 (API 35) — semua 4 tab bottom-nav bisa dinavigasi tanpa crash. Perubahan terbaru: `14445c4` (perbaikan kompilasi + Guidebook ini).
 
 ---
 
@@ -138,7 +138,7 @@ app/src/main/java/com/verse/movieverse/
 
 | Batasan | Detail |
 |---|---|
-| **Push ke GitHub terblokir** | `git push origin main` → `403 Permission to Zaqpurpur-Neo/MovieVerse.git denied to Merpatidove`. Akun yang terautentikasi tidak punya izin tulis. Commit tetap ada di lokal. |
+| Percakapan remote | `git push` sempat gagal `403 denied to Merpatidove` (akun tanpa izin tulis). Setelah kredensial diganti, push berhasil — `main` di `origin` sekarang=`14445c4`. Kalau 403 muncul lagi, cek akun yang terautentikasi, bukan kode. |
 | Tidak ada tes otomatis | Source set `test`/`androidTest` dan dependency tes sudah dihapus; verifikasi dilakukan manual lewat `assembleDebug` + logcat. |
 | Butuh token valid | Token tertanam di APK saat build (bukan rahasia yang bisa dirahasiakan dari APK sendiri). Untuk distribusi publik, ini hanya aman kalau token read-only. |
 | Data lokal tidak terenkripsi | Room dalam plaintext; `backup_rules.xml` masih menyertakan data. Isi jurnal pengguna bisa bocor lewat backup. |
@@ -189,7 +189,7 @@ Navigasi diuji dengan koordinat (layar 1220×2712, y = 2602): Jelajah `x=152`, K
 ## 10. Known Issues
 
 1. **`README.md` kosong.** Ini satu-satunya dokumen publik, dan isinya nol byte. Standar §2 mewajibkan README sebagai pintu depan publik. Butuh ditulis ulang (ringkas: apa MovieVerse, cara install, cara pakai).
-2. **Push 403** — lihat §7. Commit `1ab8bde` + perbaikan kompilasi ada di lokal, belum sampai remote.
+2. **Push 403 sempat terjadi, sekarang resolved.** `main` sudah sinkron dengan `origin` di `14445c4`. Lihat §7 kalau minta push ditolak.
 3. **`AGENTS.MD` dan `AGENTS.md` keduanya terhapus di working tree, belum di-commit.** Repo ini melacak dua file dengan nama yang berbeda kapitalisasi, yang bentrok di filesystem Windows.
 4. **9 file `.idea/` masih ter-track** meskipun `.gitignore` sudah memuat `.idea/`. Perlu `git rm -r --cached .idea` untuk benar-benar berhenti dilacak.
 5. **`TMDB_API_KEY` mati** di `local.properties` — sisa tak terpakai.
@@ -246,7 +246,7 @@ Empat file layar diperbaiki agar bisa dikompilasi: urutan cabang `when` di `Deta
 
 - **File/komponen:** `DetailFilmScreen.kt`, `HasilPencarianScreen.kt`, `PencarianAktifScreen.kt`, `JelajahScreen.kt`
 - **Detail:** perbaikan kompilasi post-commit; verifikasi `BUILD SUCCESSFUL` + 4/4 tab OK
-- **Status:** **uncommitted** — sudah terpasang di perangkat, belum di remote
+- **Status:** **committed & pushed** (`14445c4`) — sudah terpasang di perangkat dan sudah sampai remote
 
 ### 2026-10-04 — Refactor: satu komponen untuk state, stats, format, factory (`1ab8bde`) (Merpatidove)
 
@@ -254,7 +254,7 @@ Commit refactor utama. Template screen, komponen duplikat, dan dependency yang t
 
 - **File/komponen:** `ui/common/*`, `ui/components/StateSection.kt`, `ui/components/StatistikSection.kt`, `data/repository/MovieRepository.kt`, `navigation/AppNavigation.kt`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `.gitignore`
 - **Detail:** satu komponen untuk state, stats, format, factory; `kotlinx-serialization-json` dihapus (rute cukup butuh `-core` transitif); dependency tes dihapus; `local.properties` masuk `.gitignore`
-- **Status:** **committed lokal, belum pushed** (403)
+- **Status:** **committed & pushed** (`1ab8bde`)
 
 ### 2026-10-03 — Sistem ulasan di local storage (`d6bf5bb`) (Zaqpurpur-Neo)
 
