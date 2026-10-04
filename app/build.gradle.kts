@@ -67,6 +67,8 @@ dependencies {
     // Annotation processor milik Room menggunakan KSP
     ksp(libs.androidx.room.compiler)
 
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // Test
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

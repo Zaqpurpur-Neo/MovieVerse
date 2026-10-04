@@ -1,5 +1,7 @@
 package com.verse.movieverse.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmarks
@@ -35,7 +37,7 @@ import com.verse.movieverse.ui.screens.KategoriScreen
 import com.verse.movieverse.ui.screens.PencarianAktifScreen
 
 /**
- * Data representasi item tab pada bottom navigation bar.
+ * Satu item bottom bar: rute, label, dan dua ikon (aktif/nonaktif).
  */
 private data class TopLevelTab(
     val route: Any,
@@ -83,9 +85,9 @@ fun AppNavigation() {
     // Bottom bar HANYA ditampilkan di 4 tab utama
     val showBottomBar = currentDestination?.let { dest ->
         dest.hasRoute<Jelajah>() ||
-        dest.hasRoute<Kategori>() ||
-        dest.hasRoute<Jurnal>() ||
-        dest.hasRoute<Akun>()
+                dest.hasRoute<Kategori>() ||
+                dest.hasRoute<Jurnal>() ||
+                dest.hasRoute<Akun>()
     } ?: true
 
     Scaffold(
@@ -119,11 +121,17 @@ fun AppNavigation() {
             }
         }
     ) { innerPadding ->
-        // NavHost type-safe dengan 7 rute composable
+        // NavHost type-safe dengan 7 rute composable.
+        // Transisi dimatikan agar perpindahan layar langsung (materi navigasi):
+        // tanpa fade/slide bawaan, layar baru langsung tampil penuh.
         NavHost(
             navController = navController,
             startDestination = Jelajah,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
         ) {
             // 4 Tab Layar Utama
             composable<Jelajah> {
@@ -148,10 +156,15 @@ fun AppNavigation() {
                 )
             }
             composable<Jurnal> {
-                JurnalScreen()
+                JurnalScreen(
+                    onOpenDetail = { movieId -> navController.navigate(DetailFilm(movieId)) },
+                    onOpenSearch = { navController.navigate(PencarianAktif) }
+                )
             }
             composable<Akun> {
-                AkunScreen()
+                AkunScreen(
+                    onOpenDetail = { movieId -> navController.navigate(DetailFilm(movieId)) }
+                )
             }
 
             // Layar Non-Tab

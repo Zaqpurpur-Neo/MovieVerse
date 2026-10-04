@@ -30,13 +30,10 @@ class PersonalRepository(private val database: AppDatabase) {
         dao.clearSearchHistory()
     }
 
-    // === Ulasan (Fase 6B) ===
-    // Amati satu ulasan milik film; null bila belum ada ulasan.
-    // Memakai Flow daftar ulasan lalu dicari per movieId (tanpa mengubah DAO).
+    // === Ulasan ===
     fun observeReview(movieId: Int): Flow<ReviewEntity?> =
         dao.getAllReviews().map { list -> list.find { it.movieId == movieId } }
 
-    // Simpan ulasan SEKALIGUS menandai film Sudah Ditonton.
     suspend fun simpanReview(
         movieId: Int,
         title: String,
@@ -70,7 +67,7 @@ class PersonalRepository(private val database: AppDatabase) {
         dao.deleteReview(movieId)
     }
 
-    // === Watchlist (Fase 6A) ===
+    // === Watchlist ===
     fun observeIsInWatchlist(movieId: Int): Flow<Boolean> = dao.isInWatchlistFlow(movieId)
 
     suspend fun toggleWatchlist(movieId: Int, title: String, posterUrl: String, year: Int) {
@@ -88,7 +85,7 @@ class PersonalRepository(private val database: AppDatabase) {
         }
     }
 
-    // === Watched (Fase 6A) ===
+    // === Watched ===
     fun observeIsWatched(movieId: Int): Flow<Boolean> = dao.isWatchedFlow(movieId)
 
     suspend fun toggleWatched(movieId: Int, title: String, posterUrl: String, year: Int) {
@@ -104,5 +101,30 @@ class PersonalRepository(private val database: AppDatabase) {
             )
             dao.insertWatched(entity)
         }
+    }
+
+    // === Jurnal (Fase 6C) ===
+    fun semuaReviews(): Flow<List<ReviewEntity>> = dao.getAllReviews()
+
+    fun semuaWatchlist(): Flow<List<WatchlistEntity>> = dao.getAllWatchlist()
+
+    fun semuaWatched(): Flow<List<WatchedEntity>> = dao.getAllWatched()
+
+    // Pindahkan film dari watchlist ke watched
+    suspend fun tandaiDitonton(item: WatchlistEntity) {
+        dao.insertWatched(
+            WatchedEntity(
+                movieId = item.movieId,
+                title = item.title,
+                posterUrl = item.posterUrl,
+                year = item.year,
+                watchedAt = System.currentTimeMillis()
+            )
+        )
+        dao.deleteWatchlist(item.movieId)
+    }
+
+    suspend fun hapusDariWatchlist(movieId: Int) {
+        dao.deleteWatchlist(movieId)
     }
 }

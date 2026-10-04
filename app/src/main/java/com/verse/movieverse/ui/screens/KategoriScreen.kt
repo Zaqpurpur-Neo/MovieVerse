@@ -162,28 +162,6 @@ fun KategoriScreen(
                 }
 
                 item {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
-                        Text(
-                            text = "Koleksi Pilihan",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Kurasi tematik dari katalog",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                items(data.koleksi, key = { it.judul }) { koleksi ->
-                    KoleksiCard(
-                        koleksi = koleksi,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                }
-
-                item {
                     BannerBawah(
                         onOpenJurnal = onOpenJurnal,
                         modifier = Modifier.padding(16.dp)
@@ -252,53 +230,6 @@ private fun IkonGenre(
         else -> Icons.Default.Movie
     }
     Icon(ikon, contentDescription = namaGenre, modifier = modifier, tint = tint)
-}
-
-@Composable
-private fun KoleksiCard(
-    koleksi: KoleksiItem,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            PosterImage(
-                url = koleksi.posterUrl,
-                modifier = Modifier
-                    .width(60.dp)
-                    .aspectRatio(2f / 3f)
-                    .clip(MaterialTheme.shapes.small)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = koleksi.judul,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = koleksi.deskripsi,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${koleksi.jumlah} film",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
 }
 
 @Composable
