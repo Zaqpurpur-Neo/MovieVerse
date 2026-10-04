@@ -90,6 +90,17 @@ fun AppNavigation() {
                 dest.hasRoute<Akun>()
     } ?: true
 
+    // Pindah tab: kembalikan ke tab awal, lalu simpan state tiap tab.
+    fun pindahKeTab(rute: Any) {
+        navController.navigate(rute) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
@@ -99,15 +110,7 @@ fun AppNavigation() {
                         val isSelected = currentDestination?.hasRoute(tab.route::class) == true
                         NavigationBarItem(
                             selected = isSelected,
-                            onClick = {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { pindahKeTab(tab.route) },
                             icon = {
                                 Icon(
                                     imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
@@ -144,15 +147,7 @@ fun AppNavigation() {
                 KategoriScreen(
                     onOpenSearch = { navController.navigate(PencarianAktif) },
                     onOpenGenre = { genre -> navController.navigate(HasilPencarian(genre)) },
-                    onOpenJurnal = {
-                        navController.navigate(Jurnal) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
+                    onOpenJurnal = { pindahKeTab(Jurnal) }
                 )
             }
             composable<Jurnal> {

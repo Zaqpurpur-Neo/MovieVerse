@@ -4,8 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-
-    id("com.google.devtools.ksp") version "2.3.9"
+    alias(libs.plugins.ksp)
 }
 
 val localProps = Properties().apply {
@@ -26,18 +25,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
         buildConfigField("String", "TMDB_TOKEN", "\"${localProps.getProperty("TMDB_TOKEN", "")}\"")
     }
 
-    buildTypes {
-        release {
-            optimization {
-                enable = false
-            }
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -62,9 +52,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Navigation 3
+    // Navigasi type-safe. Rute @Serializable hanya butuh kotlinx-serialization-core
+    // yang sudah ikut secara transitif lewat navigation-compose.
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.kotlinx.serialization.json)
 
     // Jaringan dan gambar
     implementation(libs.retrofit)
@@ -77,14 +67,7 @@ dependencies {
     // Annotation processor milik Room menggunakan KSP
     ksp(libs.androidx.room.compiler)
 
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.datastore.preferences)
 
-    // Test
-    testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

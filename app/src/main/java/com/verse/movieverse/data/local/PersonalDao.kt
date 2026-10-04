@@ -31,9 +31,6 @@ interface PersonalDao {
     @Query("DELETE FROM reviews WHERE movieId = :movieId")
     suspend fun deleteReview(movieId: Int)
 
-    @Query("SELECT EXISTS(SELECT 1 FROM reviews WHERE movieId = :movieId)")
-    suspend fun hasReview(movieId: Int): Boolean
-
     // === Watchlist (Fase 6A) ===
     @Query("SELECT * FROM watchlist")
     fun getAllWatchlist(): Flow<List<WatchlistEntity>>

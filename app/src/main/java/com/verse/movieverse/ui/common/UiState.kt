@@ -13,3 +13,8 @@ sealed interface UiState<out T> {
     data class Success<T>(val data: T) : UiState<T>
     data class Error(val message: String) : UiState<Nothing>
 }
+
+/**
+ * Pesan error yang sama dipakai semua layar agar konsisten.
+ */
+const val PESAN_GAGAL = "Gagal memuat data. Periksa koneksi internet Anda."

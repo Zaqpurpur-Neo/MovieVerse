@@ -41,12 +41,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.verse.movieverse.data.model.MovieSummary
-import com.verse.movieverse.ui.common.UiState
+import com.verse.movieverse.ui.common.formatSkor
+import com.verse.movieverse.ui.components.BagianMuat
 import com.verse.movieverse.ui.components.PosterCard
 import com.verse.movieverse.ui.components.PosterImage
 
@@ -81,7 +80,7 @@ fun JelajahScreen(
         ChipGenre(terpilih = selectedGenre) { genre -> viewModel.selectGenre(genre) }
 
         // c. Hero "Film Unggulan".
-        BagianMuat(state = hero, tinggi = 220.dp, onRetry = { viewModel.retryHero() }) { film ->
+        BagianMuat(state = hero, modifier = Modifier.fillMaxWidth().height(220.dp).padding(horizontal = 16.dp), onRetry = { viewModel.retryHero() }) { film ->
             HeroCard(
                 film = film,
                 onOpenDetail = onOpenDetail,
@@ -95,7 +94,7 @@ fun JelajahScreen(
             subjudul = "Paling populer di TMDB",
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-        BagianMuat(state = populer, tinggi = 240.dp, onRetry = { viewModel.retryPopuler() }) { daftar ->
+        BagianMuat(state = populer, modifier = Modifier.fillMaxWidth().height(240.dp).padding(horizontal = 16.dp), onRetry = { viewModel.retryPopuler() }) { daftar ->
             if (daftar.isEmpty()) {
                 Text(
                     text = "Tidak ada film untuk genre ini",
@@ -114,60 +113,11 @@ fun JelajahScreen(
             subjudul = "Film yang sedang tayang di bioskop",
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-        BagianMuat(state = sedangTayang, tinggi = 240.dp, onRetry = { viewModel.retrySedangTayang() }) { daftar ->
+        BagianMuat(state = sedangTayang, modifier = Modifier.fillMaxWidth().height(240.dp).padding(horizontal = 16.dp), onRetry = { viewModel.retrySedangTayang() }) { daftar ->
             BarisPoster(daftar = daftar, onOpenDetail = onOpenDetail)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-/**
- * Materi UiState: satu komponen memuat tiga keadaan (Loading/Error/Success)
- * supaya tiap bagian layar seragam dan bisa punya state sendiri.
- */
-@Composable
-private fun <T> BagianMuat(
-    state: UiState<T>,
-    tinggi: Dp,
-    onRetry: () -> Unit,
-    konten: @Composable (T) -> Unit
-) {
-    when (state) {
-        is UiState.Loading -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(tinggi)
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-
-        is UiState.Error -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(tinggi)
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = onRetry) {
-                    Text("Coba Lagi")
-                }
-            }
-        }
-
-        is UiState.Success -> konten(state.data)
     }
 }
 
@@ -209,7 +159,7 @@ private fun ChipGenre(terpilih: String, onPilih: (String) -> Unit) {
         modifier = Modifier.padding(vertical = 8.dp)
     ) {
         // Materi Lazy: key wajib agar chip dikenali dari nilainya, bukan posisi.
-        items(listOf("Semua", "Aksi", "Drama", "Sci-Fi", "Horor"), key = { it }) { genre ->
+        items(listOf("Semua") + daftarGenre.take(5), key = { it }) { genre ->
             FilterChip(
                 selected = terpilih == genre,
                 onClick = { onPilih(genre) },
@@ -327,7 +277,7 @@ private fun HeroCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = String.format("%.1f", film.rating),
+                            text = formatSkor(film.rating),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White

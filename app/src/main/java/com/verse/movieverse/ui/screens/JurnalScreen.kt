@@ -1,7 +1,6 @@
 package com.verse.movieverse.ui.screens
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,7 +46,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.verse.movieverse.data.local.ReviewEntity
 import com.verse.movieverse.data.local.WatchedEntity
 import com.verse.movieverse.data.local.WatchlistEntity
+import com.verse.movieverse.ui.common.bagikanTeks
+import com.verse.movieverse.ui.common.formatSkor
+import com.verse.movieverse.ui.common.jumlahFilmDinilai
+import com.verse.movieverse.ui.common.jumlahUlasanDitulis
+import com.verse.movieverse.ui.common.rataRataSkor
 import com.verse.movieverse.ui.components.PosterImage
+import com.verse.movieverse.ui.components.StatistikSection
 
 @Composable
 fun JurnalScreen(
@@ -56,7 +61,7 @@ fun JurnalScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val viewModel: JurnalViewModel = viewModel(factory = JurnalViewModel.Factory(context))
+    val viewModel: JurnalViewModel = viewModel(factory = JurnalViewModel.factory(context))
     val reviews by viewModel.reviews.collectAsStateWithLifecycle()
     val watchlist by viewModel.watchlist.collectAsStateWithLifecycle()
     val watched by viewModel.watched.collectAsStateWithLifecycle()
@@ -83,10 +88,13 @@ fun JurnalScreen(
 
             // Empat kartu statistik
             StatistikSection(
-                filmDinilai = viewModel.jumlahFilmDinilai(),
-                ulasanDitulis = viewModel.jumlahUlasanDitulis(),
-                rataRata = viewModel.rataRataSkor(),
-                jumlahWatchlist = viewModel.jumlahWatchlist()
+                items = listOf(
+                    "Film Dinilai" to reviews.jumlahFilmDinilai().toString(),
+                    "Ulasan Ditulis" to reviews.jumlahUlasanDitulis().toString(),
+                    "Rata-rata Skor" to formatSkor(reviews.rataRataSkor().toDouble()),
+                    "Watchlist" to watchlist.size.toString()
+                ),
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -132,56 +140,6 @@ fun JurnalScreen(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
-    }
-}
-
-@Composable
-private fun StatistikSection(
-    filmDinilai: Int,
-    ulasanDitulis: Int,
-    rataRata: Float,
-    jumlahWatchlist: Int
-) {
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KartuStatistik("Film Dinilai", filmDinilai.toString(), Modifier.weight(1f))
-            KartuStatistik("Ulasan Ditulis", ulasanDitulis.toString(), Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KartuStatistik("Rata-rata Skor", formatSkor(rataRata), Modifier.weight(1f))
-            KartuStatistik("Watchlist", jumlahWatchlist.toString(), Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun KartuStatistik(
-    label: String,
-    nilai: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = nilai,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 }
 
@@ -253,7 +211,7 @@ private fun KartuUlasan(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "★ ${formatSkor(review.rating)}",
+                        text = "★ ${formatSkor(review.rating.toDouble())}",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.tertiary
@@ -462,16 +420,8 @@ private fun TeksKosong(pesan: String) {
     )
 }
 
-// Format skor 1 desimal dengan koma Indonesia, mis. 4,5
-private fun formatSkor(nilai: Float): String =
-    String.format("%.1f", nilai).replace('.', ',')
-
 // Materi Intent: ACTION_SEND membuka dialog berbagi sistem
 private fun bagikanUlasan(context: Context, review: ReviewEntity) {
-    val teks = "Saya memberi ${review.title} ${formatSkor(review.rating)}/5 di MovieVerse"
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, teks)
-    }
-    context.startActivity(Intent.createChooser(intent, "Bagikan via"))
+    val teks = "Saya memberi ${review.title} ${formatSkor(review.rating.toDouble())}/5 di MovieVerse"
+    bagikanTeks(context, teks)
 }

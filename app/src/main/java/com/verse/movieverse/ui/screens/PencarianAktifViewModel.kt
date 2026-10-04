@@ -2,13 +2,15 @@ package com.verse.movieverse.ui.screens
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.verse.movieverse.data.local.AppDatabase
 import com.verse.movieverse.data.local.SearchHistoryEntity
 import com.verse.movieverse.data.model.MovieSummary
 import com.verse.movieverse.data.repository.MovieRepository
 import com.verse.movieverse.data.repository.PersonalRepository
+import com.verse.movieverse.ui.common.PESAN_GAGAL
 import com.verse.movieverse.ui.common.UiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,12 +37,11 @@ class PencarianAktifViewModel(
         _uiState.update { UiState.Loading }
         viewModelScope.launch {
             try {
-                val populer = movieRepository.getMovies()
-                    .sortedByDescending { it.popularity }
-                    .take(5)
+                // discover() sudah mengurutkan dari populer, jadi cukup ambil 5.
+                val populer = movieRepository.discover().movies.take(5)
                 _uiState.update { UiState.Success(populer) }
             } catch (e: Exception) {
-                _uiState.update { UiState.Error("Gagal memuat data. Periksa koneksi internet Anda.") }
+                _uiState.update { UiState.Error(PESAN_GAGAL) }
             }
         }
     }
@@ -67,14 +68,13 @@ class PencarianAktifViewModel(
         }
     }
 
-    // Factory sederhana untuk menyuntikkan Context / Repository tanpa Hilt/Koin
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val db = AppDatabase.getInstance(context)
-            val movieRepo = MovieRepository()
-            val personalRepo = PersonalRepository(db)
-            @Suppress("UNCHECKED_CAST")
-            return PencarianAktifViewModel(movieRepo, personalRepo) as T
+    companion object {
+        // Factory sederhana untuk menyuntikkan Repository tanpa Hilt/Koin.
+        fun factory(context: Context) = viewModelFactory {
+            initializer {
+                val db = AppDatabase.getInstance(context)
+                PencarianAktifViewModel(MovieRepository(), PersonalRepository(db))
+            }
         }
     }
 }

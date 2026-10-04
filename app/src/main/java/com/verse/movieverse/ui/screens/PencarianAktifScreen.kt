@@ -55,7 +55,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.verse.movieverse.data.local.SearchHistoryEntity
 import com.verse.movieverse.data.model.MovieSummary
+import com.verse.movieverse.ui.common.formatSkor
 import com.verse.movieverse.ui.common.UiState
+import com.verse.movieverse.ui.components.BagianMuat
 import com.verse.movieverse.ui.components.PosterImage
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -68,7 +70,7 @@ fun PencarianAktifScreen(
 ) {
     val context = LocalContext.current
     // Inisialisasi ViewModel lewat Factory sederhana
-    val viewModel: PencarianAktifViewModel = viewModel(factory = PencarianAktifViewModel.Factory(context))
+    val viewModel: PencarianAktifViewModel = viewModel(factory = PencarianAktifViewModel.factory(context))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchHistory by viewModel.searchHistory.collectAsStateWithLifecycle(initialValue = emptyList())
 
@@ -279,8 +281,9 @@ private fun SectionGenrePopuler(onSearch: (String) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val daftarGenre = listOf("Aksi", "Sci-Fi", "Drama", "Horor", "Animasi", "Thriller", "Komedi")
-            daftarGenre.forEach { genre ->
+// Daun genre yang enak dicoba dicari, memakai daftarGenre yang sama dengan Kategori.
+val genrePopuler = daftarGenre.take(7)
+        genrePopuler.forEach { genre ->
                 AssistChip(
                     onClick = { onSearch(genre) },
                     label = { Text(genre) }
@@ -310,38 +313,17 @@ private fun SectionFilmPopuler(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        when (uiState) {
-            is UiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is UiState.Error -> {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = uiState.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = onRetry) {
-                        Text("Coba Lagi")
-                    }
-                }
-            }
+        when (val state = uiState) {
+            // Loading dan Error ditangani satu komponen yang sama dengan layar lain.
+            else -> BagianMuat(
+                state = state,
+                modifier = Modifier.fillMaxWidth().height(120.dp),
+                onRetry = onRetry
+            ) { }
 
             is UiState.Success -> {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    uiState.data.forEachIndexed { index, film ->
+                    state.data.forEachIndexed { index, film ->
                         BarisFilmPopuler(
                             nomor = index + 1,
                             film = film,
@@ -406,7 +388,7 @@ private fun BarisFilmPopuler(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = String.format("%.1f", film.rating),
+                    text = formatSkor(film.rating),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

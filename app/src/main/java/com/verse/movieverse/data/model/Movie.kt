@@ -11,15 +11,11 @@ data class MovieSummary(
     val id: Int,
     val title: String,
     val year: Int,
-    val releaseDate: String,
     val genres: List<String>,
     val rating: Double,
     val popularity: Double,
     val posterUrl: String,
-    val overview: String,
-    val director: String,
-    val cast: List<String>,
-    val trailerId: String?
+    val overview: String
 )
 
 /**
@@ -37,10 +33,8 @@ data class MovieDetail(
     val id: Int,
     val title: String,
     val year: Int,
-    val releaseDate: String,
     val genres: List<String>,
     val rating: Double,
-    val popularity: Double,
     val posterUrl: String,
     val overview: String,
     val director: String,
@@ -81,15 +75,11 @@ fun TmdbMovieDto.toSummary(): MovieSummary? {
         id = movieId,
         title = movieTitle,
         year = releaseDate?.take(4)?.toIntOrNull() ?: 0,
-        releaseDate = releaseDate.orEmpty(),
         genres = genreIds?.mapNotNull { GenreMap.namaDariId(it) }.orEmpty(),
         rating = voteAverage.roundOneDecimal(),
         popularity = popularity ?: 0.0,
         posterUrl = formatPosterUrl(posterPath),
-        overview = overview.orEmpty(),
-        director = "",
-        cast = emptyList(),
-        trailerId = null
+        overview = overview.orEmpty()
     )
 }
 
@@ -103,14 +93,12 @@ fun TmdbDetailDto.toDetail(): MovieDetail {
         id = id ?: 0,
         title = title.orEmpty(),
         year = releaseDate?.take(4)?.toIntOrNull() ?: 0,
-        releaseDate = releaseDate.orEmpty(),
         genres = genres
             ?.mapNotNull { genreDto ->
                 GenreMap.namaDariId(genreDto.id ?: -1) ?: genreDto.name
             }
             .orEmpty(),
         rating = voteAverage.roundOneDecimal(),
-        popularity = popularity ?: 0.0,
         posterUrl = formatPosterUrl(posterPath),
         overview = overview.orEmpty(),
         director = credits?.crew

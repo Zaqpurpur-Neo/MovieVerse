@@ -32,8 +32,11 @@ object GenreMap {
     }
 
     fun idDariNama(nama: String): Int? {
-        return peta.entries
-            .firstOrNull { it.value.equals(nama, ignoreCase = true) }
-            ?.key
+        return namaKeId[nama.lowercase()]
     }
+
+    // Dibuat sekali saat object diinisialisasi, supaya pencarian nama genre
+    // tidak menelusuri 19 entri setiap kali dipanggil.
+    private val namaKeId: Map<String, Int> =
+        peta.entries.associate { (id, nama) -> nama.lowercase() to id }
 }

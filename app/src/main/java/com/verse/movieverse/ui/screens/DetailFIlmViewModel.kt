@@ -2,13 +2,15 @@ package com.verse.movieverse.ui.screens
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.verse.movieverse.data.local.AppDatabase
 import com.verse.movieverse.data.local.ReviewEntity
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.data.repository.MovieRepository
 import com.verse.movieverse.data.repository.PersonalRepository
+import com.verse.movieverse.ui.common.PESAN_GAGAL
 import com.verse.movieverse.ui.common.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,7 +60,7 @@ class DetailFilmViewModel(
                 // Mulai amati status watchlist, watched, dan ulasan
                 collectStatus(id)
             } catch (e: Exception) {
-                _uiState.update { UiState.Error("Gagal memuat detail film. Periksa koneksi internet Anda.") }
+                _uiState.update { UiState.Error(PESAN_GAGAL) }
             }
         }
     }
@@ -89,37 +91,30 @@ class DetailFilmViewModel(
 
     // Toggle watchlist: bila ada hapus, bila belum ada simpan
     fun onToggleSave() {
-        val state = _uiState.value
-        if (state is UiState.Success) {
-            val film = state.data
-            viewModelScope.launch {
-                personalRepository.toggleWatchlist(
-                    movieId = film.id,
-                    title = film.title,
-                    posterUrl = film.posterUrl,
-                    year = film.year
-                )
-            }
+        withFilm { film ->
+            personalRepository.toggleWatchlist(
+                movieId = film.id,
+                title = film.title,
+                posterUrl = film.posterUrl,
+                year = film.year
+            )
         }
     }
 
     // Toggle sudah ditonton: bila ada hapus, bila belum ada simpan
     fun onToggleWatched() {
-        val state = _uiState.value
-        if (state is UiState.Success) {
-            val film = state.data
-            viewModelScope.launch {
-                personalRepository.toggleWatched(
-                    movieId = film.id,
-                    title = film.title,
-                    posterUrl = film.posterUrl,
-                    year = film.year
-                )
-            }
+        withFilm { film ->
+            personalRepository.toggleWatched(
+                movieId = film.id,
+                title = film.title,
+                posterUrl = film.posterUrl,
+                year = film.year
+            )
         }
     }
 
     // === Bottom sheet ulasan (Fase 6B) ===
+
     fun onOpenSheet() {
         _showSheet.value = true
     }
@@ -134,43 +129,45 @@ class DetailFilmViewModel(
         isRewatch: Boolean,
         catatan: String
     ) {
-        val state = _uiState.value
-        if (state is UiState.Success) {
-            val film = state.data
-            viewModelScope.launch {
-                personalRepository.simpanReview(
-                    movieId = film.id,
-                    title = film.title,
-                    posterUrl = film.posterUrl,
-                    year = film.year,
-                    rating = rating,
-                    note = catatan,
-                    watchedDate = tanggal,
-                    isRewatch = isRewatch
-                )
-                _showSheet.value = false
-            }
+        withFilm { film ->
+            personalRepository.simpanReview(
+                movieId = film.id,
+                title = film.title,
+                posterUrl = film.posterUrl,
+                year = film.year,
+                rating = rating,
+                note = catatan,
+                watchedDate = tanggal,
+                isRewatch = isRewatch
+            )
+            _showSheet.value = false
         }
     }
 
     fun onDeleteReview() {
-        val state = _uiState.value
-        if (state is UiState.Success) {
-            viewModelScope.launch {
-                personalRepository.hapusReview(state.data.id)
-                _showSheet.value = false
-            }
+        withFilm { film ->
+            personalRepository.hapusReview(film.id)
+            _showSheet.value = false
         }
     }
 
-    // Factory sederhana untuk menyuntikkan Context / Repository tanpa Hilt/Koin
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val db = AppDatabase.getInstance(context)
-            val movieRepo = MovieRepository()
-            val personalRepo = PersonalRepository(db)
-            @Suppress("UNCHECKED_CAST")
-            return DetailFilmViewModel(movieRepo, personalRepo) as T
+    /**
+     * Actionsame-filmdilewatseoranghelper:ambilfilmdariUiState,
+     * lalujalankannya di dalamviewModelScope.
+     */
+    private fun withFilm(aksi: suspend (MovieDetail) -> Unit) {
+        val state = _uiState.value
+        if (state !is UiState.Success) return
+        viewModelScope.launch { aksi(state.data) }
+    }
+
+    companion object {
+        // Factory sederhana untuk menyuntikkan Repository tanpa Hilt/Koin.
+        fun factory(context: Context) = viewModelFactory {
+            initializer {
+                val db = AppDatabase.getInstance(context)
+                DetailFilmViewModel(MovieRepository(), PersonalRepository(db))
+            }
         }
     }
 }

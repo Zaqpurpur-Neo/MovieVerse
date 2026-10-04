@@ -70,6 +70,8 @@ import com.verse.movieverse.data.local.ReviewEntity
 import com.verse.movieverse.data.model.CastMember
 import com.verse.movieverse.data.model.MovieDetail
 import com.verse.movieverse.ui.common.UiState
+import com.verse.movieverse.ui.common.bagikanTeks
+import com.verse.movieverse.ui.components.BagianMuat
 import com.verse.movieverse.ui.components.BarisBintang
 import com.verse.movieverse.ui.components.PosterImage
 import com.verse.movieverse.ui.components.ReviewSheet
@@ -87,7 +89,7 @@ fun DetailFilmScreen(
 ) {
     val context = LocalContext.current
     // ViewModel dibuat lewat Factory sederhana (materi: injeksi dependensi tanpa DI framework)
-    val viewModel: DetailFilmViewModel = viewModel(factory = DetailFilmViewModel.Factory(context))
+    val viewModel: DetailFilmViewModel = viewModel(factory = DetailFilmViewModel.factory(context))
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // State hoisting: status tombol dibaca dari ViewModel, tombol hanya menerima nilai + lambda
@@ -114,42 +116,13 @@ fun DetailFilmScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { _ ->
         when (val state = uiState) {
-            is UiState.Loading -> {
-                Box(
-                    modifier = modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is UiState.Error -> {
-                Column(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.retry() }) {
-                        Text("Coba Lagi")
-                    }
-                }
-            }
+            // Loading dan Error ditangani satu komponen yang sama dengan layar lain.
+            // Kembali tetap bisa lewat tombol sistem Android.
+            else -> BagianMuat(
+                state = state,
+                modifier = modifier.fillMaxSize(),
+                onRetry = { viewModel.retry() }
+            ) { }
 
             is UiState.Success -> {
                 val film = state.data
@@ -204,14 +177,12 @@ fun DetailFilmScreen(
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
-                            IconButton(onClick = {
-                                val shareText = "Tonton ${film.title} (${film.year}) - rating ${film.rating}/10"
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, shareText)
-                                }
-                                context.startActivity(Intent.createChooser(intent, "Bagikan via"))
-                            }) {
+IconButton(onClick = {
+                                    bagikanTeks(
+                                        context,
+                                        "Tonton ${film.title} (${film.year}) - rating ${film.rating}/10"
+                                    )
+                                }) {
                                 Icon(
                                     Icons.Default.Share,
                                     contentDescription = "Bagikan",
@@ -431,13 +402,19 @@ private fun formatDurasi(menit: Int?): String {
     if (menit == null || menit <= 0) return ""
     val jam = menit / 60
     val sisaMenit = menit % 60
-    return if (jam > 0 && sisaMenit > 0) {
-        "${jam}j ${sisaMenit}m"
-    } else if (jam > 0) {
-        "${jam}j"
-    } else {
-        "${sisaMenit}m"
-    }
+    return listOfNotNull(
+        "${jam}j".takeIf { jam > 0 },
+        "${sisaMenit}m".takeIf { sisaMenit > 0 }
+    ).joinToString(" ")
+}
+
+/**
+ * Buka trailer di aplikasi YouTube. Dipakai tombol thumbnail
+ * dan tombol cadangan "Tonton di YouTube".
+ */
+private fun bukaTrailer(context: android.content.Context, idTrailer: String) {
+    val url = android.net.Uri.parse("https://www.youtube.com/watch?v=$idTrailer")
+    context.startActivity(Intent(Intent.ACTION_VIEW, url))
 }
 
 /**
@@ -530,17 +507,14 @@ private fun SectionTrailer(
         Spacer(modifier = Modifier.height(12.dp))
 
         if (film.trailerId != null) {
-            val thumbnailUrl = "https://img.youtube.com/vi/${film.trailerId}/hqdefault.jpg"
-            val youtubeUrl = "https://www.youtube.com/watch?v=${film.trailerId}"
+            val idTrailer = film.trailerId
+            val thumbnailUrl = "https://img.youtube.com/vi/$idTrailer/hqdefault.jpg"
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .clickable {
-                        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(youtubeUrl))
-                        context.startActivity(intent)
-                    },
+                    .clickable { bukaTrailer(context, idTrailer) },
                 shape = MaterialTheme.shapes.medium
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -570,10 +544,7 @@ private fun SectionTrailer(
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
-                onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(youtubeUrl))
-                    context.startActivity(intent)
-                },
+                onClick = { bukaTrailer(context, idTrailer) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Tonton di YouTube")

@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.verse.movieverse.data.model.MovieSummary
 import com.verse.movieverse.ui.common.UiState
+import com.verse.movieverse.ui.components.BagianMuat
 import com.verse.movieverse.ui.components.PosterImage
 
 @Composable
@@ -63,34 +64,12 @@ fun HasilPencarianScreen(
         KotakQuery(query = query, onClick = onNavigateUp)
 
         when (val state = uiState) {
-            is UiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is UiState.Error -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.retry() }) {
-                        Text("Coba Lagi")
-                    }
-                }
-            }
+            // Loading dan Error ditangani satu komponen yang sama dengan layar lain.
+            else -> BagianMuat(
+                state = state,
+                modifier = Modifier.fillMaxSize(),
+                onRetry = { viewModel.retry() }
+            ) { }
 
             is UiState.Success -> {
                 val data = state.data

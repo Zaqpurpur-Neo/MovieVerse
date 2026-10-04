@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.verse.movieverse.data.model.MovieSummary
 import com.verse.movieverse.data.repository.MovieRepository
+import com.verse.movieverse.ui.common.PESAN_GAGAL
 import com.verse.movieverse.ui.common.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,7 +50,7 @@ class JelajahViewModel : ViewModel() {
         _hero.update { UiState.Loading }
         viewModelScope.launch {
             try {
-                val page = repository.getPopular(genre = null, page = 1)
+                val page = repository.discover()
                 // Ambil film pertama yang punya poster sebagai unggulan.
                 val film = page.movies.firstOrNull { it.posterUrl.isNotBlank() }
                 if (film != null) {
@@ -58,7 +59,7 @@ class JelajahViewModel : ViewModel() {
                     _hero.update { UiState.Error("Tidak ada film unggulan.") }
                 }
             } catch (e: Exception) {
-                _hero.update { UiState.Error("Gagal memuat data. Periksa koneksi internet Anda.") }
+                _hero.update { UiState.Error(PESAN_GAGAL) }
             }
         }
     }
@@ -67,10 +68,10 @@ class JelajahViewModel : ViewModel() {
         _populer.update { UiState.Loading }
         viewModelScope.launch {
             try {
-                val page = repository.getPopular(genre = _selectedGenre.value, page = 1)
+                val page = repository.discover(genre = _selectedGenre.value)
                 _populer.update { UiState.Success(page.movies) }
             } catch (e: Exception) {
-                _populer.update { UiState.Error("Gagal memuat data. Periksa koneksi internet Anda.") }
+                _populer.update { UiState.Error(PESAN_GAGAL) }
             }
         }
     }
@@ -82,7 +83,7 @@ class JelajahViewModel : ViewModel() {
                 val page = repository.getNowPlaying(page = 1)
                 _sedangTayang.update { UiState.Success(page.movies) }
             } catch (e: Exception) {
-                _sedangTayang.update { UiState.Error("Gagal memuat data. Periksa koneksi internet Anda.") }
+                _sedangTayang.update { UiState.Error(PESAN_GAGAL) }
             }
         }
     }

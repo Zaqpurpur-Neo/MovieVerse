@@ -6,6 +6,7 @@ import com.verse.movieverse.data.model.GenreMap
 import com.verse.movieverse.data.model.MovieSummary
 import com.verse.movieverse.data.repository.MoviePage
 import com.verse.movieverse.data.repository.MovieRepository
+import com.verse.movieverse.ui.common.PESAN_GAGAL
 import com.verse.movieverse.ui.common.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -77,7 +78,7 @@ class HasilPencarianViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    UiState.Error("Gagal memuat data. Periksa koneksi internet Anda.")
+                    UiState.Error(PESAN_GAGAL)
                 }
             }
         }
@@ -134,7 +135,7 @@ class HasilPencarianViewModel : ViewModel() {
      */
     private suspend fun ambil(query: String, page: Int): MoviePage {
         return if (GenreMap.idDariNama(query) != null) {
-            repository.getByGenre(query, page)
+            repository.discover(genre = query, page = page)
         } else {
             repository.search(query, page)
         }

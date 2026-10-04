@@ -3,8 +3,9 @@ package com.verse.movieverse.ui.screens
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.verse.movieverse.data.local.AppDatabase
 import com.verse.movieverse.data.local.ProfileStore
 import com.verse.movieverse.data.local.ReviewEntity
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
-import kotlin.math.roundToInt
 
 class AkunViewModel(
     private val context: Context,
@@ -99,46 +99,15 @@ class AkunViewModel(
         }
     }
 
-    // === Statistik (Fase 7C) ===
-    fun jumlahFilmDinilai(): Int = reviews.value.size
-
-    fun jumlahUlasanDitulis(): Int = reviews.value.count { it.note.isNotBlank() }
-
-    fun jumlahWatchlist(): Int = watchlist.value.size
-
-    fun jumlahSudahDitonton(): Int = watched.value.size
-
-    fun rataRataRating(): Float {
-        val daftar = reviews.value
-        if (daftar.isEmpty()) return 0f
-        return (daftar.sumOf { it.rating.toDouble() } / daftar.size).toFloat()
-    }
-
-    // Distribusi rating: 1 sampai 5. Rating dibulatkan ke bilangan bulat terdekat.
-    fun distribusiRating(): Map<Int, Int> {
-        val hasil = mutableMapOf(1 to 0, 2 to 0, 3 to 0, 4 to 0, 5 to 0)
-        reviews.value.forEach { review ->
-            val bintang = review.rating.roundToInt().coerceIn(1, 5)
-            hasil[bintang] = (hasil[bintang] ?: 0) + 1
-        }
-        return hasil
-    }
-
-    // Film favorit: 4 ulasan rating tertinggi. Seri: yang terbaru (createdAt) lebih dulu.
-    fun filmFavorit(): List<ReviewEntity> {
-        return reviews.value
-            .sortedWith(compareByDescending<ReviewEntity> { it.rating }.thenByDescending { it.createdAt })
-            .take(4)
-    }
-
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val appContext = context.applicationContext
-            val db = AppDatabase.getInstance(appContext)
-            val store = ProfileStore(appContext)
-            val personalRepo = PersonalRepository(db)
-            @Suppress("UNCHECKED_CAST")
-            return AkunViewModel(appContext, store, db, personalRepo) as T
+    companion object {
+        // Factory sederhana untuk menyuntikkan Context / Repository tanpa Hilt/Koin.
+        fun factory(context: Context) = viewModelFactory {
+            initializer {
+                val appContext = context.applicationContext
+                val db = AppDatabase.getInstance(appContext)
+                val store = ProfileStore(appContext)
+                AkunViewModel(appContext, store, db, PersonalRepository(db))
+            }
         }
     }
 }

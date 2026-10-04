@@ -43,7 +43,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +56,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.verse.movieverse.data.local.ReviewEntity
+import com.verse.movieverse.ui.common.distribusiRating
+import com.verse.movieverse.ui.common.filmFavorit
+import com.verse.movieverse.ui.common.formatSkor
+import com.verse.movieverse.ui.common.jumlahFilmDinilai
+import com.verse.movieverse.ui.common.jumlahUlasanDitulis
+import com.verse.movieverse.ui.common.rataRataSkor
 import com.verse.movieverse.ui.components.PosterImage
+import com.verse.movieverse.ui.components.StatistikSection
 import java.io.File
 
 @Composable
@@ -66,12 +72,14 @@ fun AkunScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val viewModel: AkunViewModel = viewModel(factory = AkunViewModel.Factory(context))
+    val viewModel: AkunViewModel = viewModel(factory = AkunViewModel.factory(context))
     val nama by viewModel.nama.collectAsStateWithLifecycle()
     val photoPath by viewModel.photoPath.collectAsStateWithLifecycle()
 
-    // State untuk statistik (Fase 7C)
+    // State untuk statistik (Fase 7C). Rumusanya di ui/common/Statistik.kt.
     val reviews by viewModel.reviews.collectAsStateWithLifecycle()
+    val watchlist by viewModel.watchlist.collectAsStateWithLifecycle()
+    val watched by viewModel.watched.collectAsStateWithLifecycle()
 
     var showEditDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -89,22 +97,33 @@ fun AkunScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        Text(
+            text = "Statistik Personal",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
         StatistikSection(
-            filmDinilai = viewModel.jumlahFilmDinilai(),
-            ulasanDitulis = viewModel.jumlahUlasanDitulis(),
-            watchlist = viewModel.jumlahWatchlist(),
-            sudahDitonton = viewModel.jumlahSudahDitonton()
+            items = listOf(
+                "Film Dinilai" to reviews.jumlahFilmDinilai().toString(),
+                "Ulasan Ditulis" to reviews.jumlahUlasanDitulis().toString(),
+                "Watchlist" to watchlist.size.toString(),
+                "Sudah Ditonton" to watched.size.toString()
+            ),
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
 
         FilmFavoritSection(
-            favorites = viewModel.filmFavorit(),
+            favorites = reviews.filmFavorit(),
             onOpenDetail = onOpenDetail
         )
 
         DistribusiRatingSection(
-            distribusi = viewModel.distribusiRating(),
-            rataRata = viewModel.rataRataRating(),
-            totalUlasan = reviews.size
+            distribusi = reviews.distribusiRating(),
+            rataRata = reviews.rataRataSkor()
         )
 
         SectionPengaturan(
@@ -266,55 +285,6 @@ private fun DialogEditProfil(
 // === Komponen Statistik Fase 7C ===
 
 @Composable
-private fun StatistikSection(
-    filmDinilai: Int,
-    ulasanDitulis: Int,
-    watchlist: Int,
-    sudahDitonton: Int
-) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(
-            text = "Statistik Personal",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KartuStatistik("Film Dinilai", filmDinilai.toString(), Modifier.weight(1f))
-            KartuStatistik("Ulasan Ditulis", ulasanDitulis.toString(), Modifier.weight(1f))
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KartuStatistik("Watchlist", watchlist.toString(), Modifier.weight(1f))
-            KartuStatistik("Sudah Ditonton", sudahDitonton.toString(), Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun KartuStatistik(label: String, nilai: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = nilai,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
 private fun FilmFavoritSection(
     favorites: List<ReviewEntity>,
     onOpenDetail: (Int) -> Unit
@@ -328,7 +298,7 @@ private fun FilmFavoritSection(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
         Text(
-            text = "4 film penentu selera sinema",
+            text = "${favorites.size} film penentu selera sinema",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -382,9 +352,9 @@ private fun FilmFavoritSection(
 @Composable
 private fun DistribusiRatingSection(
     distribusi: Map<Int, Int>,
-    rataRata: Float,
-    totalUlasan: Int
+    rataRata: Float
 ) {
+    val totalUlasan = distribusi.values.sum()
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -398,7 +368,7 @@ private fun DistribusiRatingSection(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Rata-rata ${String.format("%.1f", rataRata).replace('.', ',')}",
+                text = "Rata-rata ${formatSkor(rataRata.toDouble())}",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )

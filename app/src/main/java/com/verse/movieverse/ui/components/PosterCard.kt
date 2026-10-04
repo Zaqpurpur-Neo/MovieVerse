@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.verse.movieverse.data.model.MovieSummary
+import com.verse.movieverse.ui.common.formatSkor
 
 /**
  * Kartu poster film kecil untuk horizontal scroll.
@@ -68,7 +69,7 @@ fun PosterCard(
                     modifier = Modifier.size(10.dp)
                 )
                 Text(
-                    text = "%.1f".format(movie.rating),
+                    text = formatSkor(movie.rating),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )

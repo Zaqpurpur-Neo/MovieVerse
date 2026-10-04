@@ -29,22 +29,28 @@ class MovieRepository(
 
     private companion object {
         const val LANGUAGE = "en-US"
+
+        // Batas minimum suara agar film sampah tidak masuk daftar.
+        const val MIN_VOTES = 50
     }
 
     /**
-     * Sementara: semua layar yang masih memakai getMovies() akan mendapat
-     * film populer halaman 1. Nanti diganti per layar sesuai kebutuhan.
+     * Satu fungsi untuk semua kebutuhan discover: Jelajah, kategori genre,
+     * dan rentang tahun. Parameter defaulted, jadi pemanggil cukup
+     * menyebut yang berbeda.
      */
-    suspend fun getMovies(): List<MovieSummary> {
-        return getPopular(genre = null, page = 1).movies
-    }
-
-    suspend fun getPopular(genre: String?, page: Int): MoviePage {
+    suspend fun discover(
+        genre: String? = null,
+        sortBy: String = "popularity.desc",
+        minVotes: Int = MIN_VOTES,
+        releaseLte: String? = null,
+        page: Int = 1
+    ): MoviePage {
         val dto = api.discover(
-            genres = genreIdOrNull(genre),
-            sortBy = "popularity.desc",
-            minVotes = 100,
-            releaseLte = null,
+            genres = genre?.let { GenreMap.idDariNama(it)?.toString() },
+            sortBy = sortBy,
+            minVotes = minVotes,
+            releaseLte = releaseLte,
             page = page,
             language = LANGUAGE,
             includeAdult = false
@@ -56,45 +62,6 @@ class MovieRepository(
         val dto = api.nowPlaying(
             page = page,
             language = LANGUAGE
-        )
-        return toMoviePage(dto)
-    }
-
-    suspend fun getTopRated(page: Int): MoviePage {
-        val dto = api.discover(
-            genres = null,
-            sortBy = "vote_average.desc",
-            minVotes = 2000,
-            releaseLte = null,
-            page = page,
-            language = LANGUAGE,
-            includeAdult = false
-        )
-        return toMoviePage(dto)
-    }
-
-    suspend fun getClassics(page: Int): MoviePage {
-        val dto = api.discover(
-            genres = null,
-            sortBy = "vote_average.desc",
-            minVotes = 1000,
-            releaseLte = "1989-12-31",
-            page = page,
-            language = LANGUAGE,
-            includeAdult = false
-        )
-        return toMoviePage(dto)
-    }
-
-    suspend fun getByGenre(genre: String, page: Int): MoviePage {
-        val dto = api.discover(
-            genres = GenreMap.idDariNama(genre)?.toString(),
-            sortBy = "popularity.desc",
-            minVotes = 50,
-            releaseLte = null,
-            page = page,
-            language = LANGUAGE,
-            includeAdult = false
         )
         return toMoviePage(dto)
     }
@@ -135,10 +102,5 @@ class MovieRepository(
             totalPages = dto.totalPages ?: 1,
             totalResults = dto.totalResults ?: movies.size
         )
-    }
-
-    private fun genreIdOrNull(genre: String?): String? {
-        if (genre == null || genre == "Semua") return null
-        return GenreMap.idDariNama(genre)?.toString()
     }
 }
