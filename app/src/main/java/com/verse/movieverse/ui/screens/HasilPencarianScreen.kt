@@ -65,7 +65,7 @@ fun HasilPencarianScreen(
 
         when (val state = uiState) {
             // Loading dan Error ditangani satu komponen yang sama dengan layar lain.
-            else -> BagianMuat(
+            is UiState.Loading, is UiState.Error -> BagianMuat(
                 state = state,
                 modifier = Modifier.fillMaxSize(),
                 onRetry = { viewModel.retry() }
